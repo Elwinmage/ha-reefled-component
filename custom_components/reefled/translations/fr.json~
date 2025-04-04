@@ -1,0 +1,33 @@
+{
+    "title": "MCP23017 Configuration",
+    "config": {
+        "flow_title": "MCP23017 configuration",
+        "step": {
+            "user": {
+                "title": "Définire une nouvelle entitée",
+                "data": {
+                    "i2c_address": "Adresse I2C",
+		    "platform": "Type",
+                    "pin_number": "Numéro de l'entrée",
+                    "pin_name": "Nom de l'entrée"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+            "cannot_create": "Impossible de créer une entitié pour MCP23017 avec ces paramètres"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Définir les propriétés d'une entitée",
+                "data": {
+		    "invert_logic": "Inverser la logique",
+		    "pull_mode": "Pull mode",
+		    "hw_sync": "Récupérer la valeur initiale du matériel"
+                }
+            }
+        }
+    }
+}

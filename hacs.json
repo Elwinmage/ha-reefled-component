@@ -1,0 +1,8 @@
+{
+  "name": "ReefLed",
+  "render_readme": true,
+  "iot_class": "local_polling",
+  "domains":[
+      "number","sensor"
+  ]
+}

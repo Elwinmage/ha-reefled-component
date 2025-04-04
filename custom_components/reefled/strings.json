@@ -1,0 +1,19 @@
+{
+    "title": "ReefLed",
+    "config": {
+        "flow_title": "ReefLed configuration",
+        "step": {
+            "user": {
+                "title": "Add new Led",
+                "data": {
+                    "ip_address": "IP Address",
+		                "platform": "Platform",
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "Device Already configured",
+            "cannot_create": "Unable to create ReefLed device with specified parameters"
+        }
+    }
+}
