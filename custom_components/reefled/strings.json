@@ -7,7 +7,7 @@
                 "title": "Add new Led",
                 "data": {
                     "ip_address": "IP Address",
-		                "platform": "Platform",
+                    "platform": "Platform",
                 }
             }
         },

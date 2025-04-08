@@ -1,4 +1,4 @@
-"""Config flow for MCP23017 component."""
+"""Config flow for Reefled component."""
 
 import voluptuous as vol
 import glob
@@ -7,8 +7,13 @@ import logging
 from homeassistant import config_entries
 from homeassistant.core import callback
 
+from .auto_detect import (
+    get_reefleds,
+)
+
 from .const import (
     DOMAIN,
+    CONFIG_FLOW_IP_ADDRESS,
 )
 
 PLATFORMS = ["sensor","number"]
@@ -30,7 +35,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _unique_id(self, user_input):
         return "%s.%s" % (
             DOMAIN,
-            user_input[CONF_FLOW_IP_ADDRESS],
+            user_input[CONFIG_FLOW_IP_ADDRESS],
         )
 
     async def async_step_import(self, user_input=None):
@@ -55,7 +60,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             if CONFIG_FLOW_IP_ADDRESS not in user_input:
-                user_input[CONF_FLOW_PIN_NAME] = "%s" % (
+                user_input[CONFIG_FLOW_IP_ADDRESS] = "%s" % (
                     user_input[CONFIG_FLOW_IP_ADDRESS],
                 )
             
@@ -63,18 +68,29 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 title=self._title(user_input),
                 data=user_input,
             )
-        detected_devices=[]       
+            
+        detected_devices = await self.hass.async_add_executor_job(get_reefleds)
+        _LOGGER.info(detected_devices)
+        if len(detected_devices) > 0 :
+            return self.async_show_form(
+                step_id="user",
+                 data_schema=vol.Schema(
+                    {
+                        vol.Required(
+                            CONFIG_FLOW_IP_ADDRESS
+                        ): vol.In(detected_devices),
+                    }
+                     ),
+                )
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONFIG_FLOW_IP_ADDRESS
-                    ): vol.In(detected_devices),
-                    vol.Required(
-                        CONFIG_FLOW_IP_ADDRESS
-                    ): str,
-                }
-            ),
-        )
+        else:
+            return self.async_show_form(
+                step_id="user",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(
+                            CONFIG_FLOW_IP_ADDRESS
+                        ): str,
+                    }
+                ),
+            )

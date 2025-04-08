@@ -1,33 +1,19 @@
 {
-    "title": "MCP23017 Configuration",
+    "title": "Configuration de ReefLed",
     "config": {
-        "flow_title": "MCP23017 configuration",
+        "flow_title": "ReefLed configuration",
         "step": {
             "user": {
                 "title": "Définire une nouvelle entitée",
                 "data": {
-                    "i2c_address": "Adresse I2C",
-		    "platform": "Type",
-                    "pin_number": "Numéro de l'entrée",
-                    "pin_name": "Nom de l'entrée"
+                    "ip_address": "Adresse IP",
+		    "platform": "Platforme",
                 }
             }
         },
         "abort": {
             "already_configured": "Entitée déjà existatnte",
-            "cannot_create": "Impossible de créer une entitié pour MCP23017 avec ces paramètres"
+            "cannot_create": "Impossible de créer une entitié pour une ReefLed avec ces paramètres"
         }
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Définir les propriétés d'une entitée",
-                "data": {
-		    "invert_logic": "Inverser la logique",
-		    "pull_mode": "Pull mode",
-		    "hw_sync": "Récupérer la valeur initiale du matériel"
-                }
-            }
-        }
-    }
 }

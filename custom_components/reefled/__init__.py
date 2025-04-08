@@ -1,14 +1,14 @@
 import logging
 import asyncio
 import functools
+import threading
 import time
-
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import device_registry
 from homeassistant.const import EVENT_HOMEASSISTANT_START, EVENT_HOMEASSISTANT_STOP
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, PLATFORMS, CONFIG_FLOW_IP_ADDRESS
 
 import traceback
 
@@ -55,12 +55,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass, config_entry):
     """Unload REEFLED switch entry corresponding to config_entry."""
-    component = hass.data[DOMAIN][config_entry.data[CONF_I2C_ADDRESS]]
+    component = hass.data[DOMAIN][config_entry.data[CONFIG_FLOW_IP_ADDRESS]]
     component.reInit()
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Fonction qui force le rechargement des entités associées à une configEntry"""
-    component = hass.data[DOMAIN][entry.data[CONF_I2C_ADDRESS]]
+    component = hass.data[DOMAIN][entry.data[CONFIG_FLOW_IP_ADDRESS]]
     component.reInit()
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -71,7 +71,7 @@ async def async_get_or_create(hass, entity):
     try:
         async with REEFLED_DATA_LOCK:
             if ip_address in hass.data[DOMAIN]:
-                component = hass.data[DOMAIN]ip_address]
+                component = hass.data[DOMAIN][ip_address]
             else:
                 # Try to create component when it doesn't exist
                 component = await hass.async_add_executor_job(
@@ -83,7 +83,9 @@ async def async_get_or_create(hass, entity):
                 if hass.is_running:
                     component.start_polling()
 
-                                    config_entry_id=entity._entry_infos.entry_id,
+                devices = device_registry.async_get(hass)
+                devices.async_get_or_create(
+                    config_entry_id=entity._entry_infos.entry_id,
                     identifiers={(DOMAIN, ip_address)},
                     manufacturer=DEVICE_MANUFACTURER,
                     model=DOMAIN,
