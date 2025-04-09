@@ -30,14 +30,14 @@ def is_reefled(ip):
         r = requests.get('http://'+ip+'/description.xml',timeout=2)
         if r.status_code == 200:
             tree = objectify.fromstring(r.text)
-            device=tree.device.modelName
-            if device in device_list:
-                return ip,True
+            name=tree.device.modelName
+            if name in device_list:
+               return ip,True
     except:
         pass
     return ip,False
 
-def get_reefleds(nb_of_threads=32):
+def get_reefleds(nb_of_threads=64):
     ips=get_local_ips()
     reefleds=[]
     with Pool(nb_of_threads) as p:
@@ -48,8 +48,35 @@ def get_reefleds(nb_of_threads=32):
                 reefleds+=[ip]
     return reefleds
                 
-        
+
+def get_unique_id(ip):
+    try:
+        r = requests.get('http://'+ip+'/description.xml',timeout=2)
+        if r.status_code == 200:
+            tree = objectify.fromstring(r.text)
+            udn=str(tree.device.UDN)
+            uuid=udn.replace("uuid:","")
+            return uuid
+    except:
+        pass
+    return None
+     
+def get_friendly_name(ip):
+    try:
+        r = requests.get('http://'+ip+'/description.xml',timeout=2)
+        if r.status_code == 200:
+            tree = objectify.fromstring(r.text)
+            name=str(tree.device.friendlyName)
+            return name
+    except:
+        pass
+    return None
+
+
 if __name__ == '__main__':
-    nb_of_threads=255
-    res=get_reefleds(nb_of_threads)
-    print(res)
+    print(get_unique_id("192.168.0.194"))
+    print(get_friendly_name("192.168.0.194"))
+    
+          #nb_of_threads=255
+#    res=get_reefleds(nb_of_threads)
+#    print(res)
