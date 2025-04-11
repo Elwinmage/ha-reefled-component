@@ -21,18 +21,16 @@ import traceback
 
 _LOGGER = logging.getLogger(__name__)
 
-
-
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the ReefLed component."""
-    _LOGGER.error("*** --- *** async_setup")
     # hass.data[DOMAIN] stores one entry for each ReefLed instance using ip address as a key
     hass.data.setdefault(DOMAIN, {})
-    
 
     # Callback function to start polling when HA starts
     def start_polling(event):
+        _LOGGER.debug("Start polling components...")
         for component in hass.data[DOMAIN].values():
+            _LOGGER.debug("* %s"%component)
             if not component.is_alive():
                 component.start_polling()
 
@@ -58,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = ReefLed(hass, entry)
 
-    #await coordinator.async_config_entry_first_refresh()
+    coordinator.start_polling()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
