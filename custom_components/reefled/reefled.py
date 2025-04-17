@@ -16,10 +16,22 @@ from .const import (
     TEMPERATURE_INTERNAL_NAME,
     WHITE_INTERNAL_NAME,
     BLUE_INTERNAL_NAME,
-    MOON_INTERNAL_NAME
+    MOON_INTERNAL_NAME,
+    CONVERSION_COEF
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+#API
+# /
+# /dashboard
+# /acclimation
+# /device-info
+# /moonphase
+# /current
+# /timer
+# /mode : {"mode": "auto|manual|timer"}
+
 
 class ReefLedAPI():
 
@@ -49,9 +61,9 @@ class ReefLedAPI():
                 response=r.json()
                 _LOGGER.debug("Get data: %s"%response)
                 try:
-                    self.data[WHITE_INTERNAL_NAME]=response['white']*255/100
-                    self.data[BLUE_INTERNAL_NAME]=response['blue']*255/100
-                    self.data[MOON_INTERNAL_NAME]=response['moon']*255/100
+                    self.data[WHITE_INTERNAL_NAME]=response['white']/CONVERSION_COEF
+                    self.data[BLUE_INTERNAL_NAME]=response['blue']/CONVERSION_COEF
+                    self.data[MOON_INTERNAL_NAME]=response['moon']/CONVERSION_COEF
                     self.data[FAN_INTERNAL_NAME]=response['fan']
                     self.data[TEMPERATURE_INTERNAL_NAME]=response['temperature']
                     ##
@@ -82,7 +94,7 @@ class ReefLedAPI():
 
     def push_values(self):
         _LOGGER.debug("++> set new values: %s"%self.data)
-        payload={"white": self.data[WHITE_INTERNAL_NAME], "blue":self.data[BLUE_INTERNAL_NAME],"moon": self.data[MOON_INTERNAL_NAME] }
+        payload={"white": self.data[WHITE_INTERNAL_NAME]*CONVERSION_COEF, "blue":self.data[BLUE_INTERNAL_NAME]*CONVERSION_COEF,"moon": self.data[MOON_INTERNAL_NAME]*CONVERSION_COEF}
         r = requests.post(self._base_url+'/manual', json = payload)
         _LOGGER.debug(r.text)
 

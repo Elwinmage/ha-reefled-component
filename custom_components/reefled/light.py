@@ -94,10 +94,7 @@ class LEDEntity(CoordinatorEntity, LightEntity):
         _LOGGER.debug("Reefled.light.async_turn_on %s"%kwargs)
         if ATTR_BRIGHTNESS in kwargs:
             ha_value = int(kwargs[ATTR_BRIGHTNESS])
-            hw_value = int(ha_value/255*100)
-            _LOGGER.debug("set value to %d -> %d for %s"%(ha_value,hw_value,self._attr_name))
-            #TODO set new data and refresh value
-            self.coordinator.data[self.idx]=hw_value
+            self.coordinator.data[self.idx]=ha_value
             await self.coordinator.async_send_new_values()
             await self.coordinator.async_request_refresh()
 
