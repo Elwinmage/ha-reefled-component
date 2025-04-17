@@ -15,7 +15,7 @@ from .const import (
     CONFIG_FLOW_IP_ADDRESS
     )
 
-from .reefled import ReefLed
+from .coordinator import ReefLedCoordinator
 
 import traceback
 
@@ -26,22 +26,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     # hass.data[DOMAIN] stores one entry for each ReefLed instance using ip address as a key
     hass.data.setdefault(DOMAIN, {})
 
-    # Callback function to start polling when HA starts
-    def start_polling(event):
-        _LOGGER.debug("Start polling components...")
-        for component in hass.data[DOMAIN].values():
-            _LOGGER.debug("* %s"%component)
-            if not component.is_alive():
-                component.start_polling()
-
-    # Callback function to stop polling when HA stops
-    def stop_polling(event):
-        for component in hass.data[DOMAIN].values():
-            if component.is_alive():
-                component.stop_polling()
-
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_START, start_polling)
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, stop_polling)
     return True
 
 
@@ -54,9 +38,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data,
     )
 
-    coordinator = ReefLed(hass, entry)
-
-    coordinator.start_polling()
+    ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
+    coordinator = ReefLedCoordinator(hass,ip) #ReefLedAPI(ip)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 

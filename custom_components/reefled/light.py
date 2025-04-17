@@ -8,14 +8,20 @@ from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNE
 
 from homeassistant.core import callback
 
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+)
+from .coordinator import ReefLedCoordinator
+
 _LOGGER = logging.getLogger(__name__)
 
 from .const import (
     DOMAIN,
+    CONFIG_FLOW_IP_ADDRESS,
     WHITE_INTERNAL_NAME,
     BLUE_INTERNAL_NAME,
-    MOON_INTERNAL_NAME
-    )
+    MOON_INTERNAL_NAME,
+)
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -30,75 +36,91 @@ async def async_setup_platform(
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
     discovery_info=None, 
 ):
+
+    _LOGGER.debug("Reefled.light.async_setup_entry.config_entry %s"%config_entry)
+    _LOGGER.debug("DOMAIN: %s, entry_id: %s"%(DOMAIN, config_entry.entry_id))
+
+    coordinator = hass.data[DOMAIN][config_entry.entry_id]
+    
+    #await coordinator.async_config_entry_first_refresh()
+    
+    async_add_entities(
+        [LEDEntity(coordinator, config_entry, WHITE_INTERNAL_NAME),
+        LEDEntity(coordinator, config_entry, BLUE_INTERNAL_NAME),
+         LEDEntity(coordinator, config_entry, MOON_INTERNAL_NAME)], True
+    )
+
+
     """Configuration de la plate-forme tuto_hacs à partir de la configuration"""
     
-    entities=[]
-    entities += [LEDEntity(hass, entry, WHITE_INTERNAL_NAME,icon="mdi:lightbulb-outline")]
-    entities += [LEDEntity(hass, entry, BLUE_INTERNAL_NAME)]
-    entities += [LEDEntity(hass, entry,MOON_INTERNAL_NAME,icon="mdi:lightbulb-night-outline")]
-    async_add_entities(entities, True)
     
-class LEDEntity(LightEntity):
+class LEDEntity(CoordinatorEntity, LightEntity):
     """La classe de l'entité LED"""
 
-    def __init__(
-        self,
-        hass: HomeAssistant, 
-            device,
-            color, 
-            icon = "mdi:lightbulb"
-    ) -> None:
-        """Initisalisation de notre entité"""
-        self._hass = hass
-        self._device = device
-        self._component = hass.data[DOMAIN][device.entry_id]
-        self._attr_name = color
-        self._icon = icon
-        self._attr_unique_id = device.title+'_'+color
+
+    def __init__(self, coordinator, device,idx):
+        """Pass coordinator to CoordinatorEntity."""
+        _LOGGER.debug("Reefled.light.__init__")
+        super().__init__(coordinator, context=idx)
+        self.idx = idx
+        self._icon = "mdi:lightbulb"
         self._attr_supported_color_modes = [ColorMode.BRIGHTNESS]
         self._attr_color_mode = ColorMode.BRIGHTNESS
         self._state = "off"
         self._brightness = 0
-
-    def update(self) -> None:
-        self._brightness = self._component.get_value(self.name)
-        _LOGGER.debug("Update %s %s"%(self.name,self.brightness))
+        self.coordinator=coordinator
+        self._attr_name=device.title+'_'+idx
+        self._attr_unique_id=device.title+'_'+idx
+        
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        _LOGGER.debug("Reefled.light.__handle_coordinator_update")        
+        _LOGGER.debug("%s --> %s"%(self.idx,self.coordinator.data[self.idx]))
+        self._brightness =  self.coordinator.data[self.idx]
         if self.brightness > 0:
-            self._state = 'on'
+            self._state='on'
         else:
-            self._state="off"
+            self._state='off'
+        self.async_write_ha_state()
+        
 
+    async def async_turn_on(self, **kwargs):
+        """Turn the light on."""
+        _LOGGER.debug("Reefled.light.async_turn_on %s"%kwargs)
+        if ATTR_BRIGHTNESS in kwargs:
+            ha_value = int(kwargs[ATTR_BRIGHTNESS])
+            hw_value = int(ha_value/255*100)
+            _LOGGER.debug("set value to %d -> %d for %s"%(ha_value,hw_value,self._attr_name))
+            #TODO set new data and refresh value
+            self.coordinator.data[self.idx]=hw_value
+            await self.coordinator.async_send_new_values()
+            await self.coordinator.async_request_refresh()
+
+    async def async_turn_off(self, **kwargs):
+        self._brightness=0
+        self._state="off"
+        self.coordinator.data[self.idx]=0
+        await self.coordinator.async_send_new_values()
+        await self.coordinator.async_request_refresh()
+        
+            
+    @property
+    def icon(self):
+        return self._icon
+        
     @property
     def brightness(self) -> int:
         """Return the current brightness."""
         return self._brightness
-
-    async def async_turn_on(self, **kwargs) -> None:
-            """Turn device on."""
-            _LOGGER.debug(kwargs)
-            if ATTR_BRIGHTNESS in kwargs:
-                ha_value = int(kwargs[ATTR_BRIGHTNESS])
-                hw_value = int(ha_value/255*100)
-                _LOGGER.debug("set value to %d -> %d for %s"%(ha_value,hw_value,self._attr_name))
-                self._component.set_value(self.name,ha_value)
-            else:
-                self._component.set_value(self.name,255)
-
-    async def async_turn_off(self,**kwargs) -> None:
-        self._component.set_value(self.name,0)
-        
-    @property
-    def  icon(self):
-        """Return  device icon"""
-        return self._icon
     
     @property
     def is_on(self):
-        return self._brightness > 0
+        return self.brightness > 0
         
         
 

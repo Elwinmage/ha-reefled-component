@@ -4,7 +4,10 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
 from homeassistant.const import UnitOfTemperature
+
+from homeassistant.core import callback
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,6 +22,12 @@ from homeassistant.components.sensor import (
      SensorEntity,
      SensorStateClass,
  )
+
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+)
+from .coordinator import ReefLedCoordinator
+
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -38,27 +47,28 @@ async def async_setup_entry(
 ):
     """Configuration de la plate-forme tuto_hacs à partir de la configuration graphique"""
 
-    _LOGGER.debug("*** --- *** Calling async_setup_entry entry=%s", entry)
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+
     entities=[]
-    entities += [FanSensorEntity(hass, entry)]
-    entities += [TemperatureSensorEntity(hass, entry)]
+    entities += [FanSensorEntity(coordinator, entry)]
+    entities += [TemperatureSensorEntity(coordinator, entry)]
     async_add_entities(entities, True)
 
 
 
-class FanSensorEntity(SensorEntity):
+class FanSensorEntity(CoordinatorEntity,SensorEntity):
     """La classe de l'entité Sensor"""
 
     def __init__(
         self,
-        hass: HomeAssistant,  
-        entry_infos, 
+            coordinator,
+            entry_infos, 
     ) -> None:
         """Initisalisation de notre entité"""
-        self._attr_name = "Fan"
+        super().__init__(coordinator,context=FAN_INTERNAL_NAME)
+        self._attr_name = FAN_INTERNAL_NAME
         self._attr_unique_id = entry_infos.title+'_Fan'
-        self._hass = hass
-        self._component= hass.data[DOMAIN][entry_infos.entry_id]
+        self.coordinator = coordinator
         self._attr_device_class = SensorDeviceClass.POWER_FACTOR
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_native_unit_of_measurement="%"
@@ -68,24 +78,25 @@ class FanSensorEntity(SensorEntity):
         """Return device icon for this entity."""
         return "mdi:fan"
 
-    def update(self) -> None:
-        self._attr_native_value = self._component.get_value(FAN_INTERNAL_NAME)
-
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._attr_native_value= self.coordinator.data[FAN_INTERNAL_NAME]
+        self.async_write_ha_state()
         
 
-class TemperatureSensorEntity(SensorEntity):
+class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
     """La classe de l'entité Sensor"""
 
     def __init__(
         self,
-        hass: HomeAssistant,  # pylint: disable=unused-argument
+            coordinator,
         entry_infos,  # pylint: disable=unused-argument
     ) -> None:
+        super().__init__(coordinator,context=TEMPERATURE_INTERNAL_NAME)
         """Initisalisation de notre entité"""
-        self._attr_name = "temperature"
+        self._attr_name = TEMPERATURE_INTERNAL_NAME
         self._attr_unique_id = entry_infos.title+'_Temperature'
-        self._hass = hass
-        self._component= hass.data[DOMAIN][entry_infos.entry_id]
+        self.coordinator = coordinator
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -95,8 +106,9 @@ class TemperatureSensorEntity(SensorEntity):
         """Return device icon for this entity."""
         return "mdi:thermometer"
 
-    def update(self) -> None:
+    @callback
+    def _handle_coordinator_update(self) -> None:
         _LOGGER.debug("UPDATE Temperature")
-        self._attr_native_value= self._component.get_value(TEMPERATURE_INTERNAL_NAME)
-
+        self._attr_native_value= self.coordinator.data[TEMPERATURE_INTERNAL_NAME]
+        self.async_write_ha_state()
     
