@@ -66,8 +66,8 @@ class FanSensorEntity(CoordinatorEntity,SensorEntity):
     ) -> None:
         """Initisalisation de notre entité"""
         super().__init__(coordinator,context=FAN_INTERNAL_NAME)
-        self._attr_name = FAN_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+'_Fan'
+        self._attr_name = entry_infos.title+"_"+FAN_INTERNAL_NAME
+        self._attr_unique_id = entry_infos.title+"_"+FAN_INTERNAL_NAME
         self.coordinator = coordinator
         self._attr_device_class = SensorDeviceClass.POWER_FACTOR
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -94,8 +94,8 @@ class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
     ) -> None:
         super().__init__(coordinator,context=TEMPERATURE_INTERNAL_NAME)
         """Initisalisation de notre entité"""
-        self._attr_name = TEMPERATURE_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+'_Temperature'
+        self._attr_name = entry_infos.title+"_"+TEMPERATURE_INTERNAL_NAME
+        self._attr_unique_id = entry_infos.title+'_'+TEMPERATURE_INTERNAL_NAME
         self.coordinator = coordinator
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
