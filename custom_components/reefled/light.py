@@ -49,9 +49,9 @@ async def async_setup_entry(
     #await coordinator.async_config_entry_first_refresh()
     
     async_add_entities(
-        [LEDEntity(coordinator, config_entry, WHITE_INTERNAL_NAME,'mdi:lightbulb-outline'),
-        LEDEntity(coordinator, config_entry, BLUE_INTERNAL_NAME),
-         LEDEntity(coordinator, config_entry, MOON_INTERNAL_NAME,'mdi:lightbulb-night-outline')], True
+        [LEDEntity(coordinator, config_entry, MOON_INTERNAL_NAME,'mdi:lightbulb-night-outline'),
+         LEDEntity(coordinator, config_entry, WHITE_INTERNAL_NAME,'mdi:lightbulb-outline'),
+         LEDEntity(coordinator, config_entry, BLUE_INTERNAL_NAME)], True
     )
 
 

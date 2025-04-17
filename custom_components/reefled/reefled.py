@@ -61,9 +61,9 @@ class ReefLedAPI():
                 response=r.json()
                 _LOGGER.debug("Get data: %s"%response)
                 try:
-                    self.data[WHITE_INTERNAL_NAME]=response['white']/CONVERSION_COEF
-                    self.data[BLUE_INTERNAL_NAME]=response['blue']/CONVERSION_COEF
-                    self.data[MOON_INTERNAL_NAME]=response['moon']/CONVERSION_COEF
+                    self.data[WHITE_INTERNAL_NAME]=int(response['white']/CONVERSION_COEF)
+                    self.data[BLUE_INTERNAL_NAME]=int(response['blue']/CONVERSION_COEF)
+                    self.data[MOON_INTERNAL_NAME]=int(response['moon']/CONVERSION_COEF)
                     self.data[FAN_INTERNAL_NAME]=response['fan']
                     self.data[TEMPERATURE_INTERNAL_NAME]=response['temperature']
                     ##
