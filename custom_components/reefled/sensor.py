@@ -14,7 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 from .const import (
     DOMAIN,
     FAN_INTERNAL_NAME,
-    TEMPERATURE_INTERNAL_NAME
+    TEMPERATURE_INTERNAL_NAME,
+    IP_INTERNAL_NAME
     )
 
 from homeassistant.components.sensor import (
@@ -52,6 +53,7 @@ async def async_setup_entry(
     entities=[]
     entities += [FanSensorEntity(coordinator, entry)]
     entities += [TemperatureSensorEntity(coordinator, entry)]
+    entities += [IPSensorEntity(coordinator, entry)]
     async_add_entities(entities, True)
 
 
@@ -112,3 +114,30 @@ class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
         self._attr_native_value= self.coordinator.data[TEMPERATURE_INTERNAL_NAME]
         self.async_write_ha_state()
     
+
+class IPSensorEntity(CoordinatorEntity,SensorEntity):
+    """La classe de l'entité Sensor"""
+
+    def __init__(
+        self,
+            coordinator,
+        entry_infos,  # pylint: disable=unused-argument
+    ) -> None:
+        super().__init__(coordinator,context=IP_INTERNAL_NAME)
+        """Initisalisation de notre entité"""
+        self._attr_name = entry_infos.title+"_"+IP_INTERNAL_NAME
+        self._attr_unique_id = entry_infos.title+'_'+IP_INTERNAL_NAME
+        self.coordinator = coordinator
+        
+    @property
+    def icon(self):
+        """Return device icon for this entity."""
+        return "mdi:check-network-outline"
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        _LOGGER.debug("UPDATE Ip")
+        self._attr_native_value= self.coordinator.data[IP_INTERNAL_NAME]
+        self.async_write_ha_state()
+    
+

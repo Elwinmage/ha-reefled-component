@@ -40,3 +40,6 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
     
     async def async_send_new_values(self):
         return await self.my_api.async_send_new_values()
+
+    async def async_config_entry_first_refresh(self):
+        return await self.my_api.async_first_refresh()

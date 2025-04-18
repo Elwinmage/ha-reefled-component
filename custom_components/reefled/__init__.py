@@ -25,7 +25,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the ReefLed component."""
     # hass.data[DOMAIN] stores one entry for each ReefLed instance using ip address as a key
     hass.data.setdefault(DOMAIN, {})
-
     return True
 
 
@@ -40,9 +39,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
     coordinator = ReefLedCoordinator(hass,ip) #ReefLedAPI(ip)
-
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-
+    await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(update_listener))
     return True

@@ -17,7 +17,10 @@ from .const import (
     WHITE_INTERNAL_NAME,
     BLUE_INTERNAL_NAME,
     MOON_INTERNAL_NAME,
+    STATUS_INTERNAL_NAME,
+    IP_INTERNAL_NAME,
     CONVERSION_COEF
+    
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,7 +50,7 @@ class ReefLedAPI():
         result = await loop.run_in_executor(None, self.fetch_data)
         #self.fetch_data()
         return self.data
-
+    
     def fetch_data(self):
         if self.last_update_success:
             up = datetime.datetime.now() - self.last_update_success
@@ -66,6 +69,13 @@ class ReefLedAPI():
                     self.data[MOON_INTERNAL_NAME]=int(response['moon']/CONVERSION_COEF)
                     self.data[FAN_INTERNAL_NAME]=response['fan']
                     self.data[TEMPERATURE_INTERNAL_NAME]=response['temperature']
+                    ##
+                    if(self.data[WHITE_INTERNAL_NAME] > 0 or
+                       self.data[BLUE_INTERNAL_NAME] > 0 or
+                       self.data[MOON_INTERNAL_NAME] > 0):
+                        self.data[STATUS_INTERNAL_NAME]=True
+                    else:
+                        self.data[STATUS_INTERNAL_NAME]=False
                     ##
                     self.last_update_success=datetime.datetime.now()
                     ##
@@ -88,6 +98,19 @@ class ReefLedAPI():
         pass
         #await self.update()
 
+
+    def get_initial_values(self):
+        r = requests.get(self._base_url+'/',timeout=2)
+        if r.status_code == 200:
+            response=r.json()
+            _LOGGER.debug("**** /* /* */ */ **** %s" %response)
+            self.data[IP_INTERNAL_NAME]=response['wifi_ip']
+
+        
+    async def async_first_refresh(self):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None,self.get_initial_values)
+        
     async def async_add_listener(self,callback,context):
         _LOGGER.debug("async_add_listener")
         pass
