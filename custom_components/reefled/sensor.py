@@ -15,7 +15,8 @@ from .const import (
     DOMAIN,
     FAN_INTERNAL_NAME,
     TEMPERATURE_INTERNAL_NAME,
-    IP_INTERNAL_NAME
+    IP_INTERNAL_NAME,
+    DAYS
     )
 
 from homeassistant.components.sensor import (
@@ -55,7 +56,7 @@ async def async_setup_entry(
     entities += [TemperatureSensorEntity(coordinator, entry)]
     entities += [IPSensorEntity(coordinator, entry)]
     for i in range(1,8):
-        entities += [AutoSensorEntity(coordinator,entry,'auto_'+str(i))]
+        entities += [AutoSensorEntity(coordinator,entry,i)]
     async_add_entities(entities, True)
 
 
@@ -68,11 +69,11 @@ class AutoSensorEntity(CoordinatorEntity,SensorEntity):
             idx
             ) -> None:
         super().__init__(coordinator,context=idx)
-        self._idx = idx
-        self._attr_name=entry_infos.title+"_"+idx
-        self._attr_unique_id=self._attr_name
+        self._idx = 'auto_'+str(idx)
+        self._attr_name=entry_infos.title+'_'+DAYS[idx-1]
+        self._attr_unique_id=entry_infos.title+'_'+self._idx
         self.coordinator=coordinator
-        
+
     @property
     def icon(self):
         return "mdi:calendar"

@@ -21,3 +21,5 @@ STATUS_INTERNAL_NAME="status"
 IP_INTERNAL_NAME="ip"
 
 CONVERSION_COEF=100/255
+
+DAYS=["Sunday","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
