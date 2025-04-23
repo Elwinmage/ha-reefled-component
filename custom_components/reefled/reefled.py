@@ -42,15 +42,17 @@ class ReefLedAPI():
         self._base_url = "http://"+ip
         _LOGGER.debug("API set for %s"%ip)
         self.data={}
+        self.data[STATUS_INTERNAL_NAME]=False
+        self.programs={}
         self.last_update_success=None
         
     async def get_initial_data(self):
         _LOGGER.debug('Reefled.get_initial_data')
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self.fetch_data)
-        #self.fetch_data()
         return self.data
     
+
     def fetch_data(self):
         if self.last_update_success:
             up = datetime.datetime.now() - self.last_update_success
@@ -58,32 +60,65 @@ class ReefLedAPI():
         else:
             last_update = 3
         if last_update > 2:
-            _LOGGER.debug("fecth_data: %s",self._base_url+"/manual")
-            r = requests.get(self._base_url+"/manual",timeout=2)
-            if r.status_code == 200:
-                response=r.json()
-                _LOGGER.debug("Get data: %s"%response)
-                try:
-                    self.data[WHITE_INTERNAL_NAME]=int(response['white']/CONVERSION_COEF)
-                    self.data[BLUE_INTERNAL_NAME]=int(response['blue']/CONVERSION_COEF)
-                    self.data[MOON_INTERNAL_NAME]=int(response['moon']/CONVERSION_COEF)
-                    self.data[FAN_INTERNAL_NAME]=response['fan']
-                    self.data[TEMPERATURE_INTERNAL_NAME]=response['temperature']
-                    ##
-                    if(self.data[WHITE_INTERNAL_NAME] > 0 or
-                       self.data[BLUE_INTERNAL_NAME] > 0 or
-                       self.data[MOON_INTERNAL_NAME] > 0):
-                        self.data[STATUS_INTERNAL_NAME]=True
-                    else:
-                        self.data[STATUS_INTERNAL_NAME]=False
-                    ##
-                    self.last_update_success=datetime.datetime.now()
-                    ##
-                except Exception as e:
-                    _LOGGER.error("Getting values %s"%e)
-                    _LOGGER.debug("/*/*/*/* coordinator data updated to %s"%self.data)
+            self._fetch_led_status()
+            self._fetch_program()
         else:
             _LOGGER.debug("No refresh, last data retrieved less than 2s")
+
+            
+    def _fetch_program(self):
+        #get week
+        _LOGGER.debug("_fetch_progam")
+        r= requests.get(self._base_url+"/preset_name",timeout=2)
+        if r.status_code==200:
+            response=r.json()
+            _LOGGER.debug("Get data:%s"%response)
+            try:
+                for i in range(1,8):
+                    _LOGGER.debug(" * %d %s"%(response[i-1]['day'],response[i-1]['name']))
+                    prog_id=response[i-1]['day']
+                    prog_name=response[i-1]['name']
+                    if prog_name not in self.programs:
+                        r =requests.get(self._base_url+"/auto/"+str(prog_id),timeout=2)
+                        if r.status_code==200:
+                            prog_data=r.json()
+                            self.programs[prog_name]=prog_data
+                            _LOGGER.debug("Get prog: %s"%prog_data)
+                    else:
+                        prog_data=self.programs[prog_name]
+                    self.data['auto_'+str(prog_id)]={'name':prog_name,'data':prog_data}
+            except Exception as e:
+                _LOGGER.error("Can not get value: %s"%response)
+                _LOGGER.error("Can not get value: %s"%e)
+                
+
+                
+    def _fetch_led_status(self):
+        _LOGGER.debug("fecth_data: %s",self._base_url+"/manual")
+        r = requests.get(self._base_url+"/manual",timeout=2)
+        if r.status_code == 200:
+            response=r.json()
+            _LOGGER.debug("Get data: %s"%response)
+            try:
+                self.data[WHITE_INTERNAL_NAME]=int(response['white']/CONVERSION_COEF)
+                self.data[BLUE_INTERNAL_NAME]=int(response['blue']/CONVERSION_COEF)
+                self.data[MOON_INTERNAL_NAME]=int(response['moon']/CONVERSION_COEF)
+                self.data[FAN_INTERNAL_NAME]=response['fan']
+                self.data[TEMPERATURE_INTERNAL_NAME]=response['temperature']
+                if ( self.data[WHITE_INTERNAL_NAME]>0 or
+                     self.data[BLUE_INTERNAL_NAME]>0 or
+                     self.data[MOON_INTERNAL_NAME]>0 ):
+                    self.data[STATUS_INTERNAL_NAME]= True
+                else:
+                    self.data[STATUS_INTERNAL_NAME]= False
+                
+                ##
+                self.last_update_success=datetime.datetime.now()
+                ##
+            except Exception as e:
+                _LOGGER.error("Getting values %s"%e)
+                _LOGGER.debug("/*/*/*/* coordinator data updated to %s"%self.data)
+    
     
     async def update(self) :       
         _LOGGER.debug("Reefled.update")

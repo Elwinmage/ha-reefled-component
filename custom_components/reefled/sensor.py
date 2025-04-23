@@ -54,10 +54,37 @@ async def async_setup_entry(
     entities += [FanSensorEntity(coordinator, entry)]
     entities += [TemperatureSensorEntity(coordinator, entry)]
     entities += [IPSensorEntity(coordinator, entry)]
+    for i in range(1,8):
+        entities += [AutoSensorEntity(coordinator,entry,'auto_'+str(i))]
     async_add_entities(entities, True)
 
 
-
+class AutoSensorEntity(CoordinatorEntity,SensorEntity):
+    """ Schedule """
+    def __init__(
+            self,
+            coordinator,
+            entry_infos,
+            idx
+            ) -> None:
+        super().__init__(coordinator,context=idx)
+        self._idx = idx
+        self._attr_name=entry_infos.title+"_"+idx
+        self._attr_unique_id=self._attr_name
+        self.coordinator=coordinator
+        
+    @property
+    def icon(self):
+        return "mdi:calendar"
+    
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        data = self.coordinator.data[self._idx]
+        self._attr_native_value=data['name']
+        _LOGGER.debug("*/*/*/__handle_coordinator_update%s"%data)
+        self._attr_extra_state_attributes = data['data']
+        self.async_write_ha_state()
+    
 class FanSensorEntity(CoordinatorEntity,SensorEntity):
     """La classe de l'entité Sensor"""
 

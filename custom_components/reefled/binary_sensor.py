@@ -76,6 +76,7 @@ class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         self._state= self.coordinator.data[STATUS_INTERNAL_NAME]
+
         self.async_write_ha_state()
         
 
