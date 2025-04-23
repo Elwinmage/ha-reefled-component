@@ -53,7 +53,6 @@ card:
         data.push([now.getTime()+60000*(entity.attributes.clouds.from),intensity]);
         data.push([now.getTime()+60000*(entity.attributes.clouds.to),0]); return
         data;
-            
     - entity: sensor.rsled160_2081858396_auto_1
       show:
         legend_value: false
