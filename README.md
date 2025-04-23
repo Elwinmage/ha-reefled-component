@@ -11,7 +11,7 @@ Manage ReefLed
 
 you need to install config-template-card and apexcharts-card from HACS
 
-
+<code>
 type: custom:config-template-card
 entities:
   - sensor.rsled160_2081858396_auto_1
@@ -111,3 +111,4 @@ card:
     - id: power
       min: 0
       max: 100
+</code>
