@@ -82,7 +82,7 @@ class AutoSensorEntity(CoordinatorEntity,SensorEntity):
         data = self.coordinator.data[self._idx]
         self._attr_native_value=data['name']
         _LOGGER.debug("*/*/*/__handle_coordinator_update%s"%data)
-        self._attr_extra_state_attributes = data['data']
+        self._attr_extra_state_attributes = {'data': data['data'],'clouds':data['clouds']}
         self.async_write_ha_state()
     
 class FanSensorEntity(CoordinatorEntity,SensorEntity):

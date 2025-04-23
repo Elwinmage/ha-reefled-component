@@ -34,7 +34,12 @@ _LOGGER = logging.getLogger(__name__)
 # /current
 # /timer
 # /mode : {"mode": "auto|manual|timer"}
-
+# /auto
+# /auto/[1-7]
+# /preset_name
+# /preset_name/[1-7]
+# /cloud
+# /clouds/[1-7] (intensity: Low,Medium,High)
 
 class ReefLedAPI():
 
@@ -78,15 +83,23 @@ class ReefLedAPI():
                     _LOGGER.debug(" * %d %s"%(response[i-1]['day'],response[i-1]['name']))
                     prog_id=response[i-1]['day']
                     prog_name=response[i-1]['name']
+                    clouds_data={}
                     if prog_name not in self.programs:
-                        r =requests.get(self._base_url+"/auto/"+str(prog_id),timeout=2)
+                        r = requests.get(self._base_url+"/auto/"+str(prog_id),timeout=2)
                         if r.status_code==200:
                             prog_data=r.json()
                             self.programs[prog_name]=prog_data
                             _LOGGER.debug("Get prog: %s"%prog_data)
                     else:
                         prog_data=self.programs[prog_name]
-                    self.data['auto_'+str(prog_id)]={'name':prog_name,'data':prog_data}
+
+                    # Get clouds
+                    c = requests.get(self._base_url+"/clouds/"+str(prog_id),timeout=2)
+                    if c.status_code==200:
+                        clouds_data=c.json()
+                        _LOGGER.debug("Get clouds: %s"%clouds_data)
+                        
+                    self.data['auto_'+str(prog_id)]={'name':prog_name,'data':prog_data,'clouds':clouds_data}
             except Exception as e:
                 _LOGGER.error("Can not get value: %s"%response)
                 _LOGGER.error("Can not get value: %s"%e)
