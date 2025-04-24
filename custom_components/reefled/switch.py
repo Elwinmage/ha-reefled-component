@@ -11,13 +11,12 @@ _LOGGER = logging.getLogger(__name__)
 
 from .const import (
     DOMAIN,
-    STATUS_INTERNAL_NAME,
+    DAILY_PROG_INTERNAL_NAME,
     )
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-    BinarySensorDeviceClass,
+from homeassistant.components.switch import (
+    SwitchEntity,
+    SwitchDeviceClass,
  )
 
 from homeassistant.helpers.update_coordinator import (
@@ -47,12 +46,12 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities=[]
-    entities += [GlobalStateBinarySensorEntity(coordinator, entry)]
+    entities += [DailyProgSwitchEntity(coordinator, entry)]
     async_add_entities(entities, True)
 
 
 
-class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
+class DailyProgSwitchEntity(CoordinatorEntity,SwitchEntity):
     """La classe de l'entité Sensor"""
 
     def __init__(
@@ -61,22 +60,21 @@ class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
             entry_infos, 
     ) -> None:
         """Initisalisation de notre entité"""
-        super().__init__(coordinator,context=STATUS_INTERNAL_NAME)
-        self._attr_name = entry_infos.title+"_"+STATUS_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+"_"+STATUS_INTERNAL_NAME
+        super().__init__(coordinator,context=DAILY_PROG_INTERNAL_NAME)
+        self._attr_name = entry_infos.title+"_"+DAILY_PROG_INTERNAL_NAME
+        self._attr_unique_id = entry_infos.title+"_"+DAILY_PROG_INTERNAL_NAME
         self.coordinator = coordinator
-        self._attr_device_class = BinarySensorDeviceClass.LIGHT
+        self._attr_device_class=SwitchDeviceClass.SWITCH
         self._state = False
         
     @property
     def icon(self):
         """Return device icon for this entity."""
-        return "mdi:wall-sconce-flat"
+        return "mdi:calendar-range"
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        self._state= self.coordinator.data[STATUS_INTERNAL_NAME]
-
+        self._state= self.coordinator.daily_prog
         self.async_write_ha_state()
         
 
@@ -84,3 +82,9 @@ class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
     def is_on(self):
         return self._state
 
+
+    def turn_on(self,**kwargs) -> None:
+        self._state=True
+
+    def turn_off(self,**kwargs) -> None:
+        self._state=False

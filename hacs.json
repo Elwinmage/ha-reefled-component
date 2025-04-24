@@ -5,6 +5,7 @@
   "domains":[
       "light",
       "sensor",
-      "binary_sensor"
+      "binary_sensor",
+      "switch"
   ]
 }

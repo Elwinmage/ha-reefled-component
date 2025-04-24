@@ -6,7 +6,7 @@ DEVICE_MANUFACTURER="Red Sea"
 
 CONF_FLOW_PLATFORM = "platform"
 
-PLATFORMS: list[Platform] = [Platform.LIGHT,Platform.SENSOR,Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [Platform.LIGHT,Platform.SENSOR,Platform.BINARY_SENSOR,Platform.SWITCH]
 
 CONFIG_FLOW_IP_ADDRESS="ip_address"
 
@@ -19,6 +19,8 @@ BLUE_INTERNAL_NAME="blue"
 MOON_INTERNAL_NAME="moon"
 STATUS_INTERNAL_NAME="status"
 IP_INTERNAL_NAME="ip"
+
+DAILY_PROG_INTERNAL_NAME="daily_prog"
 
 CONVERSION_COEF=100/255
 
