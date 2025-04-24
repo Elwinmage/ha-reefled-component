@@ -45,7 +45,7 @@ def get_reefleds(nb_of_threads=64):
         for device in res:
             ip,status=device
             if status == True:
-                reefleds+=[ip]
+                reefleds+=[ip+' '+get_friendly_name(ip)]
     return reefleds
                 
 

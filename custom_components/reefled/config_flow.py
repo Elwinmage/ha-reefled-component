@@ -30,9 +30,10 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def _title(self, user_input):
-        f_kwargs = {}
-        f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS]
-        fname=await self.hass.async_add_executor_job(partial(get_friendly_name,**f_kwargs))
+        #f_kwargs = {}
+        #f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS]
+        #fname=await self.hass.async_add_executor_job(partial(get_friendly_name,**f_kwargs))
+        fname=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[1]
         return fname    
 
     async def _unique_id(self, user_input):
@@ -67,6 +68,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
             title=await self._title(user_input)
             _LOGGER.debug("-- ** TITLE ** -- %s"%title)
+            user_input[CONFIG_FLOW_IP_ADDRESS]=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[0]
             return self.async_create_entry(
                 title=title,
                 data=user_input,
