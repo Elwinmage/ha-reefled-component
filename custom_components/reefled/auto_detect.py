@@ -25,7 +25,7 @@ def get_local_ips():
 
 
 def is_reefled(ip):
-    device_list=['RSLED160']
+    device_list=['RSLED160','RSLED90','RSLED50']
     try:
         r = requests.get('http://'+ip+'/description.xml',timeout=2)
         if r.status_code == 200:
