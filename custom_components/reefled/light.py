@@ -7,6 +7,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.light import LightEntity, ColorMode, ATTR_BRIGHTNESS
 
 from homeassistant.core import callback
+        
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+        
 
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -47,7 +50,6 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     
     #await coordinator.async_config_entry_first_refresh()
-    
     async_add_entities(
         [LEDEntity(coordinator, config_entry, MOON_INTERNAL_NAME,'mdi:lightbulb-night-outline'),
          LEDEntity(coordinator, config_entry, WHITE_INTERNAL_NAME,'mdi:lightbulb-outline'),
@@ -118,7 +120,9 @@ class LEDEntity(CoordinatorEntity, LightEntity):
     @property
     def is_on(self):
         return self.brightness > 0
-        
-        
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
     

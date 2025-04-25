@@ -12,10 +12,11 @@ from homeassistant.const import EVENT_HOMEASSISTANT_START, EVENT_HOMEASSISTANT_S
 from .const import (
     DOMAIN,
     PLATFORMS,
-    CONFIG_FLOW_IP_ADDRESS
+    CONFIG_FLOW_IP_ADDRESS,
+    VIRTUAL_LED,
     )
 
-from .coordinator import ReefLedCoordinator
+from .coordinator import ReefLedCoordinator, ReefLedVirtualCoordinator
 
 import traceback
 
@@ -36,10 +37,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.entry_id,
         entry.data,
     )
-
     ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
-    coordinator = ReefLedCoordinator(hass,ip) #ReefLedAPI(ip)
+    if ip.startswith(VIRTUAL_LED):
+        coordinator = ReefLedVirtualCoordinator(hass,entry)
+    else:
+        coordinator = ReefLedCoordinator(hass,entry)
+        await coordinator._async_setup()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
     await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(update_listener))

@@ -20,7 +20,16 @@ MOON_INTERNAL_NAME="moon"
 STATUS_INTERNAL_NAME="status"
 IP_INTERNAL_NAME="ip"
 
+
+MODEL_NAME="hw_model"
+MODEL_ID="hwid"
+HW_VERSION="hw_revision"
+SW_VERSION="version"
+
+
 DAILY_PROG_INTERNAL_NAME="daily_prog"
+
+VIRTUAL_LED="virtual"
 
 CONVERSION_COEF=100/255
 

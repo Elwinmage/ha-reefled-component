@@ -19,8 +19,11 @@ from .const import (
     MOON_INTERNAL_NAME,
     STATUS_INTERNAL_NAME,
     IP_INTERNAL_NAME,
-    CONVERSION_COEF
-    
+    CONVERSION_COEF,
+    MODEL_NAME,
+    MODEL_ID,
+    HW_VERSION,
+    SW_VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,6 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 # /dashboard
 # /acclimation
 # /device-info
+# /firmware
 # /moonphase
 # /current
 # /timer
@@ -51,14 +55,47 @@ class ReefLedAPI():
         self.programs={}
         self.last_update_success=None
         self._daily_prog = True
+
+    def fetch_initial_data(self):
+        self._fetch_infos()
+        self.fetch_data()
+        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+        _LOGGER.debug(self.data)
+        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
         
     async def get_initial_data(self):
         _LOGGER.debug('Reefled.get_initial_data')
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self.fetch_data)
+        #result = await loop.run_in_executor(None, self._fetch_infos)
+        #result = await loop.run_in_executor(None, self.fetch_data)
+        result = await loop.run_in_executor(None, self.fetch_initial_data)
         return self.data
     
 
+    def _fetch_infos(self):
+        _LOGGER.debug("fecth_info: %s",self._base_url+"/device-info")
+        # Device
+        r = requests.get(self._base_url+"/device-info",timeout=2)
+        if r.status_code == 200:
+            response=r.json()
+            _LOGGER.debug("Get device infos: %s"%response)
+            try:
+                self.data[MODEL_NAME]=response[MODEL_NAME]
+                self.data[MODEL_ID]=response[MODEL_ID]
+                self.data[HW_VERSION]=response[HW_VERSION]
+            except Exception as e:
+                _LOGGER.error("Getting info %s"%e)
+        # Firmware
+        r = requests.get(self._base_url+"/firmware",timeout=2)
+        if r.status_code == 200:
+            response=r.json()
+            _LOGGER.debug("Get firmware infos: %s"%response)
+            try:
+                self.data[SW_VERSION]=response[SW_VERSION]
+            except Exception as e:
+                _LOGGER.error("Getting info %s"%e)
+
+        
     def fetch_data(self):
         if self.last_update_success:
             up = datetime.datetime.now() - self.last_update_success

@@ -6,6 +6,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.const import UnitOfTemperature
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+
 
 from homeassistant.core import callback
 
@@ -16,7 +18,7 @@ from .const import (
     FAN_INTERNAL_NAME,
     TEMPERATURE_INTERNAL_NAME,
     IP_INTERNAL_NAME,
-    DAYS
+    DAYS,
     )
 
 from homeassistant.components.sensor import (
@@ -85,7 +87,14 @@ class AutoSensorEntity(CoordinatorEntity,SensorEntity):
         _LOGGER.debug("*/*/*/__handle_coordinator_update%s"%data)
         self._attr_extra_state_attributes = {'data': data['data'],'clouds':data['clouds']}
         self.async_write_ha_state()
-    
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
+
+
+        
 class FanSensorEntity(CoordinatorEntity,SensorEntity):
     """La classe de l'entité Sensor"""
 
@@ -112,6 +121,11 @@ class FanSensorEntity(CoordinatorEntity,SensorEntity):
     def _handle_coordinator_update(self) -> None:
         self._attr_native_value= self.coordinator.data[FAN_INTERNAL_NAME]
         self.async_write_ha_state()
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
         
 
 class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
@@ -141,7 +155,12 @@ class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
         _LOGGER.debug("UPDATE Temperature")
         self._attr_native_value= self.coordinator.data[TEMPERATURE_INTERNAL_NAME]
         self.async_write_ha_state()
-    
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
+   
 
 class IPSensorEntity(CoordinatorEntity,SensorEntity):
     """La classe de l'entité Sensor"""
@@ -168,4 +187,7 @@ class IPSensorEntity(CoordinatorEntity,SensorEntity):
         self._attr_native_value= self.coordinator.data[IP_INTERNAL_NAME]
         self.async_write_ha_state()
     
-
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info

@@ -5,6 +5,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+
 from homeassistant.core import callback
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,10 +49,59 @@ async def async_setup_entry(
 
     entities=[]
     entities += [DailyProgSwitchEntity(coordinator, entry)]
+
+    if type(coordinator).__name__ == 'ReefLedVirtualCoordinator':
+        for led in coordinator.slaves:
+            entities += [SlaveLedSwitchEntity(coordinator,entry,led)]
+
     async_add_entities(entities, True)
 
 
+class SlaveLedSwitchEntity(CoordinatorEntity,SwitchEntity):
+    """La classe de l'entité Sensor"""
 
+    def __init__(
+        self,
+            coordinator,
+            entry_infos,
+            idx
+    ) -> None:
+        """Initisalisation de notre entité"""
+        super().__init__(coordinator,context=idx.title)
+        self._attr_name = entry_infos.title+" slave "+idx.title
+        self._attr_unique_id = entry_infos.title+"_slave_"+idx.title
+        self.coordinator = coordinator
+        self._attr_device_class=SwitchDeviceClass.SWITCH
+        self._state = False
+        
+    @property
+    def icon(self):
+        """Return device icon for this entity."""
+        return "mdi:calendar-range"
+
+    #@callback
+    #def _handle_coordinator_update(self) -> None:
+    #    self._state= self.coordinator.daily_prog
+    #    self.async_write_ha_state()
+        
+
+    @property
+    def is_on(self):
+        return self._state
+
+
+    def turn_on(self,**kwargs) -> None:
+        self._state=True
+
+    def turn_off(self,**kwargs) -> None:
+        self._state=False
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
+       
+    
 class DailyProgSwitchEntity(CoordinatorEntity,SwitchEntity):
     """La classe de l'entité Sensor"""
 
@@ -88,3 +139,9 @@ class DailyProgSwitchEntity(CoordinatorEntity,SwitchEntity):
 
     def turn_off(self,**kwargs) -> None:
         self._state=False
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
+        

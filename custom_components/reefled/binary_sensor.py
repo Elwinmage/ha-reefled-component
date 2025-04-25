@@ -6,13 +6,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from homeassistant.core import callback
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 
 _LOGGER = logging.getLogger(__name__)
 
 from .const import (
     DOMAIN,
     STATUS_INTERNAL_NAME,
-    )
+)
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -84,3 +85,8 @@ class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
     def is_on(self):
         return self._state
 
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return self.coordinator.device_info
+    

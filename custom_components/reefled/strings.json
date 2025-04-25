@@ -1,5 +1,8 @@
 {
     "title": "ReefLed",
+    "common": {
+	"monday": "YESS!! MONDAY",
+    },
     "config": {
         "flow_title": "ReefLed configuration",
         "step": {
@@ -7,6 +10,7 @@
                 "title": "Add new Led",
                 "data": {
                     "ip_address": "IP Address",
+		    "virtual_led": "New virtual LED Controler",
                     "platform": "Platform",
                 }
             }

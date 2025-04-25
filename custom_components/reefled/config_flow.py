@@ -5,6 +5,7 @@ import glob
 import logging
 
 from functools import partial
+from time import time
 
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -19,6 +20,7 @@ from .const import (
     PLATFORMS,
     DOMAIN,
     CONFIG_FLOW_IP_ADDRESS,
+    VIRTUAL_LED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,15 +62,22 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Create a new entity from UI."""
         if user_input is not None:
-            #Identify device with unique ID
-            uuid = await self._unique_id(user_input)
-            _LOGGER.debug("-- ** UUID ** -- %s"%uuid)
-            #await self.async_set_unique_id(uuid)
-            await self.async_set_unique_id(str(uuid))
-            self._abort_if_unique_id_configured()
-            title=await self._title(user_input)
-            _LOGGER.debug("-- ** TITLE ** -- %s"%title)
-            user_input[CONFIG_FLOW_IP_ADDRESS]=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[0]
+            if user_input[CONFIG_FLOW_IP_ADDRESS] == VIRTUAL_LED:
+                title=VIRTUAL_LED+'-'+str(int(time()))
+                user_input[CONFIG_FLOW_IP_ADDRESS]=title
+                _LOGGER.debug("-- ** UUID ** -- %s"%title)
+                await self.async_set_unique_id(title)
+            else:
+                #Identify device with unique ID
+                uuid = await self._unique_id(user_input)
+                _LOGGER.debug("-- ** UUID ** -- %s"%uuid)
+                #await self.async_set_unique_id(uuid)
+                await self.async_set_unique_id(str(uuid))
+                self._abort_if_unique_id_configured()
+                title=await self._title(user_input)
+                _LOGGER.debug("-- ** TITLE ** -- %s"%title)
+                user_input[CONFIG_FLOW_IP_ADDRESS]=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[0]
+    
             return self.async_create_entry(
                 title=title,
                 data=user_input,
@@ -76,6 +85,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             
         detected_devices = await self.hass.async_add_executor_job(get_reefleds)
         _LOGGER.info(detected_devices)
+        detected_devices += [VIRTUAL_LED]
         if len(detected_devices) > 0 :
             return self.async_show_form(
                 step_id="user",
