@@ -87,7 +87,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.info("Detected devices: %s"%detected_devices)
         for device in self.hass.data[DOMAIN]:
             coordinator=self.hass.data[DOMAIN][device]
-            if type(coordinator).__name__=='ReefLedCoordinator':
+            if type(coordinator).__name__=='ReefLedCoordinator' and coordinator.detected_id in detected_devices:
                 _LOGGER.info("%s skipped (already configured)"%coordinator.detected_id)
                 detected_devices.remove(coordinator.detected_id)
         _LOGGER.info("Available devices: %s"%detected_devices)
