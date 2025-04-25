@@ -84,7 +84,13 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
             
         detected_devices = await self.hass.async_add_executor_job(get_reefleds)
-        _LOGGER.info(detected_devices)
+        _LOGGER.info("Detected devices: %s"%detected_devices)
+        for device in self.hass.data[DOMAIN]:
+            coordinator=self.hass.data[DOMAIN][device]
+            if type(coordinator).__name__=='ReefLedCoordinator':
+                _LOGGER.info("%s skipped (already configured)"%coordinator.detected_id)
+                detected_devices.remove(coordinator.detected_id)
+        _LOGGER.info("Available devices: %s"%detected_devices)
         detected_devices += [VIRTUAL_LED]
         if len(detected_devices) > 0 :
             return self.async_show_form(

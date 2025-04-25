@@ -22,6 +22,7 @@ from .const import (
     HW_VERSION,
     SW_VERSION,
     DEVICE_MANUFACTURER,
+    VIRTUAL_LED,
 )
 
 from .reefled import ReefLedAPI
@@ -98,6 +99,10 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
     def sw_version(self):
         return self.my_api.data[SW_VERSION]
 
+    @property
+    def detected_id(self):
+        return self._ip+' '+self._title
+    
 
 class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
 
@@ -145,9 +150,8 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
             },
             name=self.title,
             manufacturer=DEVICE_MANUFACTURER,
-#            via_device=(DOMAIN, self.title),
+            model=VIRTUAL_LED,
         )
-        
         
     @property
     def title(self):
