@@ -38,13 +38,13 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
     ) -> None:
         """Initialize coordinator."""
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL))
+        self._hass=hass
         self._ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
         self.my_api = ReefLedAPI(self._ip)
         self._title = entry.title
 
-    def update(self):
-        #TODO a voir si beosin de l'implementer
-        pass
+    async def update(self):
+        await self.my_api.fetch_data() 
         
     async def _async_setup(self) -> None:
         """Do initialization logic."""
@@ -94,6 +94,11 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         
     def get_data(self,name):
         _LOGGER.debug("get_data for %s: %s"%(name,self.my_api.data[name]))
+
+        #await self.my_api.fetch_data()
+        #asyncio.run_coroutine_threadsafe(
+        #    self.my_api.fetch_data() , self._hass.loop
+        #).result()
         return self.my_api.data[name]
     
 

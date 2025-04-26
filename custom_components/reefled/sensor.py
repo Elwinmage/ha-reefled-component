@@ -49,7 +49,7 @@ SENSORS: tuple[ReefLedSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.POWER_FACTOR,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda device: device.get_data(FAN_INTERNAL_NAME),
+        value_fn=lambda device:  device.get_data(FAN_INTERNAL_NAME),
         exists_fn=lambda device: device.data_exist(FAN_INTERNAL_NAME),
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:fan",
@@ -60,7 +60,7 @@ SENSORS: tuple[ReefLedSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda device: device.get_data(TEMPERATURE_INTERNAL_NAME),
+        value_fn=lambda device:  device.get_data(TEMPERATURE_INTERNAL_NAME),
         exists_fn=lambda device: device.data_exist(TEMPERATURE_INTERNAL_NAME),
         entity_category=EntityCategory.DIAGNOSTIC,
         icon="mdi:thermometer",
@@ -68,7 +68,7 @@ SENSORS: tuple[ReefLedSensorEntityDescription, ...] = (
     ReefLedSensorEntityDescription(
         key="ip",
         translation_key="ip",
-        value_fn=lambda device: device.get_data(IP_INTERNAL_NAME),
+        value_fn=lambda device:  device.get_data(IP_INTERNAL_NAME),
         exists_fn=lambda device: device.data_exist(IP_INTERNAL_NAME),
         icon="mdi:check-network-outline",
     ),
@@ -112,17 +112,18 @@ class ReefLedSensorEntity(SensorEntity):
         self._attr_available = False  
         self._attr_unique_id = f"{device.serial}_{entity_description.key}"
         
-    def update(self) -> None:
+    async def async_update(self) -> None:
         """Update entity state."""
         try:
-            self._device.update()
+            await self._device.update()
         except Exception as e:
-            _LOGGER.warning("Update failed for %s: %s", self.entity_id,e)
-            self._attr_available = False  # Set property value
-            return
+           # _LOGGER.warning("Update failed for %s: %s", self.entity_id,e)
+           # self._attr_available = False  # Set property value
+           # return
+            pass
         self._attr_available = True
         # We don't need to check if device available here
-        self._attr_native_value = self.entity_description.value_fn(
+        self._attr_native_value =  self.entity_description.value_fn(
             self._device
         )  # Update "native_value" property
         self._attr_extra_state_attributes=self._device.get_prog_data(self.entity_description.key)

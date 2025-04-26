@@ -32,9 +32,6 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     async def _title(self, user_input):
-        #f_kwargs = {}
-        #f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS]
-        #fname=await self.hass.async_add_executor_job(partial(get_friendly_name,**f_kwargs))
         fname=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[1]
         return fname    
 
@@ -43,21 +40,6 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS]
         uuid=await self.hass.async_add_executor_job(partial(get_unique_id,**f_kwargs))
         return uuid
-
-    async def async_step_import(self, user_input=None):
-        """Create a new entity from configuration.yaml import."""
-        pass
-        # _LOGGER.error("**** user_input **** %"%user_input)
-        # config_entry =  await self.async_set_unique_id(self._unique_id(user_input))
-        # # Remove entry (from storage) matching the same unique id
-        # if config_entry:
-        #     self.hass.config_entries.async_remove(config_entry.entry_id)
-
-        # return self.async_create_entry(
-        #     title=self._title(user_input),
-        #     data=user_input,
-        # )
-
 
     async def async_step_user(self, user_input=None):
         """Create a new entity from UI."""
@@ -93,7 +75,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     detected_devices.remove(coordinator.detected_id)
         _LOGGER.info("Available devices: %s"%detected_devices)
         detected_devices += [VIRTUAL_LED]
-        if len(detected_devices) > 0 :
+        if len(detected_devices) > 1 :
             return self.async_show_form(
                 step_id="user",
                  data_schema=vol.Schema(

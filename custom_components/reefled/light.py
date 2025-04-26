@@ -105,17 +105,18 @@ class ReefLedLightEntity(LightEntity):
         self._state = "off"
         
         
-    def update(self) -> None:
+    async def async_update(self) -> None:
         """Update entity state."""
         try:
-            self._device.update()
+            await self._device.update()
         except Exception as e:
-            _LOGGER.warning("Update failed for %s: %s", self.entity_id,e)
-            self._attr_available = False  # Set property value
-            return
+            # _LOGGER.warning("Update failed for %s: %s", self.entity_id,e)
+            # self._attr_available = False  # Set property value
+            # return
+            pass
         self._attr_available = True
         # We don't need to check if device available here
-        self._brightness = self.entity_description.value_fn(
+        self._brightness =  self.entity_description.value_fn(
             self._device
         )  # Update "native_value" property
         if self.brightness > 0:
@@ -123,7 +124,7 @@ class ReefLedLightEntity(LightEntity):
         else:
             self._state='off'
 
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
         """Turn the light on."""
         _LOGGER.debug("Reefled.light.async_turn_on %s"%kwargs)
         if ATTR_BRIGHTNESS in kwargs:
@@ -133,7 +134,7 @@ class ReefLedLightEntity(LightEntity):
             self._device.push_values()
 
 
-    def turn_off(self, **kwargs):
+    def async_turn_off(self, **kwargs):
         self._brightness=0
         self._state="off"
         self._device.data[self.entity_description.key]=0

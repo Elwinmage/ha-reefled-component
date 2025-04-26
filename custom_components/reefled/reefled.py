@@ -1,7 +1,7 @@
 import logging
 import json
 import asyncio
-import requests
+import httpx
 import datetime
 
 from homeassistant.core import HomeAssistant
@@ -54,46 +54,43 @@ class ReefLedAPI():
         self.last_update_success=None
         self._daily_prog = True
 
-    def fetch_initial_data(self):
-        """ Get inital datas and device information """
-        self._fetch_infos()
-        self.fetch_data()
-        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
-        _LOGGER.debug(self.data)
-        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
-        
+      
     async def get_initial_data(self):
         """ Get inital datas and device information async """
         _LOGGER.debug('Reefled.get_initial_data')
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self.fetch_initial_data)
+        await self._fetch_infos()
+        await self.fetch_data()
+        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
+        _LOGGER.debug(self.data)
+        _LOGGER.debug('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
         return self.data
 
-    def _fetch_infos(self):
+    async def _fetch_infos(self):
         """ Get device information """
         _LOGGER.debug("fecth_info: %s",self._base_url+"/device-info")
         # Device
-        r = requests.get(self._base_url+"/device-info",timeout=2)
-        if r.status_code == 200:
-            response=r.json()
-            _LOGGER.debug("Get device infos: %s"%response)
-            try:
-                self.data[MODEL_NAME]=response[MODEL_NAME]
-                self.data[MODEL_ID]=response[MODEL_ID]
-                self.data[HW_VERSION]=response[HW_VERSION]
-            except Exception as e:
-                _LOGGER.error("Getting info %s"%e)
-        # Firmware
-        r = requests.get(self._base_url+"/firmware",timeout=2)
-        if r.status_code == 200:
-            response=r.json()
-            _LOGGER.debug("Get firmware infos: %s"%response)
-            try:
-                self.data[SW_VERSION]=response[SW_VERSION]
-            except Exception as e:
-                _LOGGER.error("Getting info %s"%e)
+        async with httpx.AsyncClient(verify=False) as client:
+            r = await client.get(self._base_url+"/device-info",timeout=2)
+            f = await client.get(self._base_url+"/firmware",timeout=2)
+            if r.status_code == 200:
+                response=r.json()
+                _LOGGER.debug("Get device infos: %s"%response)
+                try:
+                    self.data[MODEL_NAME]=response[MODEL_NAME]
+                    self.data[MODEL_ID]=response[MODEL_ID]
+                    self.data[HW_VERSION]=response[HW_VERSION]
+                except Exception as e:
+                    _LOGGER.error("Getting info %s"%e)
+            # Firmware
+            if f.status_code == 200:
+                response=f.json()
+                _LOGGER.debug("Get firmware infos: %s"%response)
+                try:
+                    self.data[SW_VERSION]=response[SW_VERSION]
+                except Exception as e:
+                    _LOGGER.error("Getting info %s"%e)
 
-    def fetch_data(self):
+    async def fetch_data(self):
         """ Get Led information for light, program, fan, temeprature... """
         # Only if last request where less that 2s """
         if self.last_update_success:
@@ -102,19 +99,20 @@ class ReefLedAPI():
         else:
             last_update = DO_NOT_REFRESH_TIME +1 
         if last_update > DO_NOT_REFRESH_TIME:
-            self._fetch_led_status()
-            self._fetch_program()
+            await self._fetch_led_status()
+            await self._fetch_program()
         else:
             _LOGGER.debug("No refresh, last data retrieved less than 2s")
             
-    def _fetch_program(self):
+    async def _fetch_program(self):
         """ Get week program with clouds """
         #get week
-        r= requests.get(self._base_url+"/preset_name",timeout=2)
-        if r.status_code==200:
-            response=r.json()
-            _LOGGER.debug("Get program data:%s"%response)
-            try:
+        async with httpx.AsyncClient(verify=False) as client:
+            r = await client.get(self._base_url+"/preset_name",timeout=2)
+            if r.status_code==200:
+                response=r.json()
+                _LOGGER.debug("Get program data:%s"%response)
+ #               try:
                 self._daily_prog =  True
                 old_prog_name=None
                 for i in range(1,8):
@@ -125,23 +123,24 @@ class ReefLedAPI():
                     old_prog_name=prog_name        
                     clouds_data={}
                     if prog_name not in self.programs:
-                        r = requests.get(self._base_url+"/auto/"+str(prog_id),timeout=2)
+                        r = await client.get(self._base_url+"/auto/"+str(prog_id),timeout=2)
                         if r.status_code==200:
                             prog_data=r.json()
                             self.programs[prog_name]=prog_data
                     else:
                         prog_data=self.programs[prog_name]
                     # Get clouds
-                    c = requests.get(self._base_url+"/clouds/"+str(prog_id),timeout=2)
+                    c = await client.get(self._base_url+"/clouds/"+str(prog_id),timeout=2)
                     if c.status_code==200:
                         clouds_data=c.json()
                     self.data['auto_'+str(prog_id)]={'name':prog_name,'data':prog_data,'clouds':clouds_data}
-            except Exception as e:
-                _LOGGER.error("Can not get value: %s because %s"%(response,e))
+#                except Exception as e:
+#                    _LOGGER.error("Can not get value: %s because %s"%(response,e))
                 
-    def _fetch_led_status(self):
+    async def _fetch_led_status(self):
         """ Get led information data """
-        r = requests.get(self._base_url+"/manual",timeout=2)
+        async with httpx.AsyncClient(verify=False) as client:
+            r = await client.get(self._base_url+"/manual",timeout=2)
         if r.status_code == 200:
             response=r.json()
             _LOGGER.debug("Get data: %s"%response)
@@ -165,20 +164,16 @@ class ReefLedAPI():
     
     async def update(self) :       
         """ Update reeefled datas """
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self.fetch_data)
+        await self.fetch_data()
         return self.data
     
     
-    def get_initial_values(self):
-        r = requests.get(self._base_url+'/',timeout=2)
-        if r.status_code == 200:
-            response=r.json()
-            self.data[IP_INTERNAL_NAME]=response['wifi_ip']
-
     async def async_first_refresh(self):
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None,self.get_initial_values)
+        async with httpx.AsyncClient(verify=False) as client:
+            r = await client.get(self._base_url+'/',timeout=2)
+            if r.status_code == 200:
+                response=r.json()
+                self.data[IP_INTERNAL_NAME]=response['wifi_ip']
         
     async def async_add_listener(self,callback,context):
         _LOGGER.debug("async_add_listener")
