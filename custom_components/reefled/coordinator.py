@@ -88,11 +88,15 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
             return res
         except Exception as e:
             return None
-    
+
+    def push_values(self):
+        self.my_api.push_values()
+        
     def get_data(self,name):
         _LOGGER.debug("get_data for %s: %s"%(name,self.my_api.data[name]))
         return self.my_api.data[name]
     
+
     def data_exist(self,name):
         if name in self.my_api.data:
             return True

@@ -54,6 +54,17 @@
 	    "auto_7": {
 		"name": "Saturday"
 	    }
+	},
+	"light": {
+	    "white": {
+		"name": "White"
+	    },
+	    "blue": {
+		"name": "Blue"
+	    },
+	    "moon": {
+		"name": "Moon"
+	    }
 	}
     }
 }
