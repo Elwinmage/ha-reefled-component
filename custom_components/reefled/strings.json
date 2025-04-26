@@ -1,8 +1,5 @@
 {
     "title": "ReefLed",
-    "common": {
-	"monday": "YESS!! MONDAY",
-    },
     "config": {
         "flow_title": "ReefLed configuration",
         "step": {
@@ -19,5 +16,44 @@
             "already_configured": "Device Already configured",
             "cannot_create": "Unable to create ReefLed device with specified parameters"
         }
+    },
+    "entity": {
+	"binary_sensor": {
+	    "status":{
+		"name":"LED Status"
+	    }
+	},
+	"sensor": {
+	    "fan": {
+		"name": "Fan"
+	    },
+	    "temperature": {
+		"name": "Temperature"
+	    },
+	    "ip": {
+		"name": "IP Address"
+	    },
+	    "auto_1": {
+		"name": "Sunday"
+	    },
+	    "auto_2": {
+		"name": "Monday"
+	    },
+	    "auto_3": {
+		"name": "Tuesday"
+	    },
+	    "auto_4": {
+		"name": "Wednesday"
+	    },
+	    "auto_5": {
+		"name": "Thursday"
+	    },
+	    "auto_6": {
+		"name": "Friday"
+	    },
+	    "auto_7": {
+		"name": "Saturday"
+	    }
+	}
     }
 }

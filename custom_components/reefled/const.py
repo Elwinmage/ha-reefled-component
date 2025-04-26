@@ -10,7 +10,8 @@ PLATFORMS: list[Platform] = [Platform.LIGHT,Platform.SENSOR,Platform.BINARY_SENS
 
 CONFIG_FLOW_IP_ADDRESS="ip_address"
 
-SCAN_INTERVAL=120
+SCAN_INTERVAL=120 #in seconds
+DO_NOT_REFRESH_TIME=2 #in seconds
 
 FAN_INTERNAL_NAME='fan'
 TEMPERATURE_INTERNAL_NAME="temperature"
@@ -33,4 +34,3 @@ VIRTUAL_LED="virtual"
 
 CONVERSION_COEF=100/255
 
-DAYS=["Sunday","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]

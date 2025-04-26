@@ -1,92 +1,92 @@
-""" Implements the sensor entity """
+""" Implements the binary sensor entity """
 import logging
 
+from dataclasses import dataclass
+from collections.abc import Callable
+
 from homeassistant.core import HomeAssistant
+
 from homeassistant.config_entries import ConfigEntry
+
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+ )
+
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-from homeassistant.core import callback
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-
-_LOGGER = logging.getLogger(__name__)
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.typing import StateType
 
 from .const import (
     DOMAIN,
     STATUS_INTERNAL_NAME,
 )
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-    BinarySensorDeviceClass,
- )
-
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-)
 from .coordinator import ReefLedCoordinator
 
+_LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
-):
-    """Configuration de la plate-forme à partir de la configuration
-    trouvée dans configuration.yaml"""
-    pass
 
+
+@dataclass(kw_only=True)
+class ReefLedBinarySensorEntityDescription(BinarySensorEntityDescription):
+    """Describes ReefLed binary sensor entity."""
+    exists_fn: Callable[[ReefLedCoordinator], bool] = lambda _: True
+    value_fn: Callable[[ReefLedCoordinator], StateType]
+
+
+""" ReefLed Binary Sensor List """    
+SENSORS: tuple[ReefLedBinarySensorEntityDescription, ...] = (
+    ReefLedBinarySensorEntityDescription(
+        key="status",
+        translation_key="status",
+        device_class=BinarySensorDeviceClass.LIGHT,
+        value_fn=lambda device: device.get_data(STATUS_INTERNAL_NAME),
+        exists_fn=lambda device: device.data_exist(STATUS_INTERNAL_NAME),
+        icon="mdi:wall-sconce-flat",
+    ),
+)
+
+    
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback,
+        discovery_info=None,
 ):
-    """Configuration de la plate-forme tuto_hacs à partir de la configuration graphique"""
-
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-
+    """ Configure binary entities from graphic user interface data """
+    device = hass.data[DOMAIN][entry.entry_id]
     entities=[]
-    entities += [GlobalStateBinarySensorEntity(coordinator, entry)]
+    entities += [ReefLedBinarySensorEntity(device, description)
+                 for description in SENSORS
+                 if description.exists_fn(device)]
     async_add_entities(entities, True)
 
 
-
-class GlobalStateBinarySensorEntity(CoordinatorEntity,BinarySensorEntity):
-    """La classe de l'entité Sensor"""
+class ReefLedBinarySensorEntity(BinarySensorEntity):
+    """Represent an ReefLed binary sensor."""
+    _attr_has_entity_name = True
 
     def __init__(
-        self,
-            coordinator,
-            entry_infos, 
+        self, device: ReefLedCoordinator, entity_description: ReefLedBinarySensorEntityDescription
     ) -> None:
-        """Initisalisation de notre entité"""
-        super().__init__(coordinator,context=STATUS_INTERNAL_NAME)
-        self._attr_name = entry_infos.title+"_"+STATUS_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+"_"+STATUS_INTERNAL_NAME
-        self.coordinator = coordinator
-        self._attr_device_class = BinarySensorDeviceClass.LIGHT
-        self._state = False
+        """Set up the instance."""
+        self._device = device
+        self.entity_description = entity_description
+        self._attr_available = True
+        self._attr_unique_id = f"{device.serial}_{entity_description.key}"
+        self._state=self.entity_description.value_fn(self._device)
         
     @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:wall-sconce-flat"
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        self._state= self.coordinator.data[STATUS_INTERNAL_NAME]
-
-        self.async_write_ha_state()
-        
-
-    @property
-    def is_on(self):
+    def is_on(self) -> bool | None:
+        """Return the state of the sensor."""
+        self._state=self.entity_description.value_fn(self._device)
         return self._state
 
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return self.coordinator.device_info
+        return self._device.device_info
+
     

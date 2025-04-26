@@ -1,193 +1,134 @@
 """ Implements the sensor entity """
 import logging
 
+from dataclasses import dataclass
+from collections.abc import Callable
+
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.typing import StateType
 
-from homeassistant.const import UnitOfTemperature
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-
-
-from homeassistant.core import callback
-
-_LOGGER = logging.getLogger(__name__)
+from homeassistant.const import (
+    UnitOfTemperature,
+    PERCENTAGE,
+    EntityCategory,
+)
 
 from .const import (
     DOMAIN,
     FAN_INTERNAL_NAME,
     TEMPERATURE_INTERNAL_NAME,
     IP_INTERNAL_NAME,
-    DAYS,
-    )
-
-from homeassistant.components.sensor import (
-     SensorDeviceClass,
-     SensorEntity,
-     SensorStateClass,
- )
-
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
 )
+
 from .coordinator import ReefLedCoordinator
 
+_LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
-):
-    """Configuration de la plate-forme à partir de la configuration
-    trouvée dans configuration.yaml"""
-    pass
+@dataclass(kw_only=True)
+class ReefLedSensorEntityDescription(SensorEntityDescription):
+    """Describes reefled sensor entity."""
+    exists_fn: Callable[[ReefLedCoordinator], bool] = lambda _: True
+    value_fn: Callable[[ReefLedCoordinator], StateType]
+
+""" Reeled sensors list """
+SENSORS: tuple[ReefLedSensorEntityDescription, ...] = (
+    ReefLedSensorEntityDescription(
+        key="fan",
+        translation_key="fan",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.POWER_FACTOR,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda device: device.get_data(FAN_INTERNAL_NAME),
+        exists_fn=lambda device: device.data_exist(FAN_INTERNAL_NAME),
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:fan",
+    ),
+    ReefLedSensorEntityDescription(
+        key="temperature",
+        translation_key="temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda device: device.get_data(TEMPERATURE_INTERNAL_NAME),
+        exists_fn=lambda device: device.data_exist(TEMPERATURE_INTERNAL_NAME),
+        entity_category=EntityCategory.DIAGNOSTIC,
+        icon="mdi:thermometer",
+    ),
+    ReefLedSensorEntityDescription(
+        key="ip",
+        translation_key="ip",
+        value_fn=lambda device: device.get_data(IP_INTERNAL_NAME),
+        exists_fn=lambda device: device.data_exist(IP_INTERNAL_NAME),
+        icon="mdi:check-network-outline",
+    ),
+)
+
+""" Lights and cloud schedule as sensors """
+for auto_id in range(1,8):
+    SENSORS += (ReefLedSensorEntityDescription(
+        key="auto_"+str(auto_id),
+        translation_key="auto_"+str(auto_id),
+        value_fn=lambda device: device.get_prog_name("auto_"+str(auto_id)),
+        exists_fn=lambda device: device.data_exist("auto_"+str(auto_id)),
+        icon="mdi:calendar",
+    ),)
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        async_add_entities: AddEntitiesCallback,
+        discovery_info=None,
 ):
-    """Configuration de la plate-forme tuto_hacs à partir de la configuration graphique"""
-
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-
+    """Configure reefled sensors from graphic user interface data"""
+    device = hass.data[DOMAIN][entry.entry_id]
     entities=[]
-    entities += [FanSensorEntity(coordinator, entry)]
-    entities += [TemperatureSensorEntity(coordinator, entry)]
-    entities += [IPSensorEntity(coordinator, entry)]
-    for i in range(1,8):
-        entities += [AutoSensorEntity(coordinator,entry,i)]
+    entities += [ReefLedSensorEntity(device, description)
+                 for description in SENSORS
+                 if description.exists_fn(device)]
     async_add_entities(entities, True)
 
 
-class AutoSensorEntity(CoordinatorEntity,SensorEntity):
-    """ Schedule """
-    def __init__(
-            self,
-            coordinator,
-            entry_infos,
-            idx
-            ) -> None:
-        super().__init__(coordinator,context=idx)
-        self._idx = 'auto_'+str(idx)
-        self._attr_name=entry_infos.title+'_'+DAYS[idx-1]
-        self._attr_unique_id=entry_infos.title+'_'+self._idx
-        self.coordinator=coordinator
-
-    @property
-    def icon(self):
-        return "mdi:calendar"
-    
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        data = self.coordinator.data[self._idx]
-        self._attr_native_value=data['name']
-        _LOGGER.debug("*/*/*/__handle_coordinator_update%s"%data)
-        self._attr_extra_state_attributes = {'data': data['data'],'clouds':data['clouds']}
-        self.async_write_ha_state()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self.coordinator.device_info
-
-
-        
-class FanSensorEntity(CoordinatorEntity,SensorEntity):
-    """La classe de l'entité Sensor"""
+class ReefLedSensorEntity(SensorEntity):
+    """Represent an ReefLed sensor."""
+    _attr_has_entity_name = True
 
     def __init__(
-        self,
-            coordinator,
-            entry_infos, 
+        self, device: ReefLedCoordinator, entity_description: ReefLedSensorEntityDescription
     ) -> None:
-        """Initisalisation de notre entité"""
-        super().__init__(coordinator,context=FAN_INTERNAL_NAME)
-        self._attr_name = entry_infos.title+"_"+FAN_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+"_"+FAN_INTERNAL_NAME
-        self.coordinator = coordinator
-        self._attr_device_class = SensorDeviceClass.POWER_FACTOR
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement="%"
+        """Set up the instance."""
+        self._device = device
+        self.entity_description = entity_description
+        self._attr_available = False  
+        self._attr_unique_id = f"{device.serial}_{entity_description.key}"
         
-    @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:fan"
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        self._attr_native_value= self.coordinator.data[FAN_INTERNAL_NAME]
-        self.async_write_ha_state()
-
+    def update(self) -> None:
+        """Update entity state."""
+        try:
+            self._device.update()
+        except Exception as e:
+            _LOGGER.warning("Update failed for %s: %s", self.entity_id,e)
+            self._attr_available = False  # Set property value
+            return
+        self._attr_available = True
+        # We don't need to check if device available here
+        self._attr_native_value = self.entity_description.value_fn(
+            self._device
+        )  # Update "native_value" property
+        self._attr_extra_state_attributes=self._device.get_prog_data(self.entity_description.key)
+        
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return self.coordinator.device_info
-        
+        return self._device.device_info
 
-class TemperatureSensorEntity(CoordinatorEntity,SensorEntity):
-    """La classe de l'entité Sensor"""
-
-    def __init__(
-        self,
-            coordinator,
-        entry_infos,  # pylint: disable=unused-argument
-    ) -> None:
-        super().__init__(coordinator,context=TEMPERATURE_INTERNAL_NAME)
-        """Initisalisation de notre entité"""
-        self._attr_name = entry_infos.title+"_"+TEMPERATURE_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+'_'+TEMPERATURE_INTERNAL_NAME
-        self.coordinator = coordinator
-        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-        self._attr_device_class = SensorDeviceClass.TEMPERATURE
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        
-    @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:thermometer"
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        _LOGGER.debug("UPDATE Temperature")
-        self._attr_native_value= self.coordinator.data[TEMPERATURE_INTERNAL_NAME]
-        self.async_write_ha_state()
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self.coordinator.device_info
-   
-
-class IPSensorEntity(CoordinatorEntity,SensorEntity):
-    """La classe de l'entité Sensor"""
-
-    def __init__(
-        self,
-            coordinator,
-        entry_infos,  # pylint: disable=unused-argument
-    ) -> None:
-        super().__init__(coordinator,context=IP_INTERNAL_NAME)
-        """Initisalisation de notre entité"""
-        self._attr_name = entry_infos.title+"_"+IP_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+'_'+IP_INTERNAL_NAME
-        self.coordinator = coordinator
-        
-    @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:check-network-outline"
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        _LOGGER.debug("UPDATE Ip")
-        self._attr_native_value= self.coordinator.data[IP_INTERNAL_NAME]
-        self.async_write_ha_state()
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self.coordinator.device_info

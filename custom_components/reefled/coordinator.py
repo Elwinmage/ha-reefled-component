@@ -41,8 +41,10 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         self._ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
         self.my_api = ReefLedAPI(self._ip)
         self._title = entry.title
-        _LOGGER.debug("**** ** ***** %s"%self._ip)
-        
+
+    def update(self):
+        #TODO a voir si beosin de l'implementer
+        pass
         
     async def _async_setup(self) -> None:
         """Do initialization logic."""
@@ -74,14 +76,36 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
             model_id=self.model_id,
             hw_version=self.hw_version,
             sw_version=self.sw_version,
-#            via_device=(DOMAIN, self.title),
         )
-        
+
+    def get_prog_name(self,name):
+        return self.my_api.data[name]['name']
+
+    def get_prog_data(self,name):
+        try:
+            data = self.my_api.data[name]
+            res = {'data':data['data'],'clouds':data['clouds']}
+            return res
+        except Exception as e:
+            return None
+    
+    def get_data(self,name):
+        _LOGGER.debug("get_data for %s: %s"%(name,self.my_api.data[name]))
+        return self.my_api.data[name]
+    
+    def data_exist(self,name):
+        if name in self.my_api.data:
+            return True
+        return False
     
     @property
     def title(self):
         return self._title
 
+    @property
+    def serial(self):
+        return self._title
+    
     @property
     def model(self):
         return self.my_api.data[MODEL_NAME]
