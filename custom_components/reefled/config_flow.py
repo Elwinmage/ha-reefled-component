@@ -4,11 +4,18 @@ import voluptuous as vol
 import glob
 import logging
 
+from typing import Any
+
 from functools import partial
 from time import time
 
 from homeassistant import config_entries
+
+from homeassistant.config_entries import ConfigEntry
+
 from homeassistant.core import callback
+
+from homeassistant.data_entry_flow import FlowResult
 
 from .auto_detect import (
     get_reefleds,
@@ -21,6 +28,7 @@ from .const import (
     DOMAIN,
     CONFIG_FLOW_IP_ADDRESS,
     VIRTUAL_LED,
+    LINKED_LED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,25 +72,25 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 title=title,
                 data=user_input,
             )
-            
         detected_devices = await self.hass.async_add_executor_job(get_reefleds)
+        available_devices=detected_devices
         _LOGGER.info("Detected devices: %s"%detected_devices)
         if DOMAIN in self.hass.data:
             for device in self.hass.data[DOMAIN]:
                 coordinator=self.hass.data[DOMAIN][device]
                 if type(coordinator).__name__=='ReefLedCoordinator' and coordinator.detected_id in detected_devices:
                     _LOGGER.info("%s skipped (already configured)"%coordinator.detected_id)
-                    detected_devices.remove(coordinator.detected_id)
+                    available_devices.remove(coordinator.detected_id)
         _LOGGER.info("Available devices: %s"%detected_devices)
-        detected_devices += [VIRTUAL_LED]
-        if len(detected_devices) > 1 :
+        available_devices += [VIRTUAL_LED]
+        if len(available_devices) > 1 :
             return self.async_show_form(
                 step_id="user",
                  data_schema=vol.Schema(
                     {
                         vol.Required(
                             CONFIG_FLOW_IP_ADDRESS
-                        ): vol.In(detected_devices),
+                        ): vol.In(available_devices),
                     }
                      ),
                 )
@@ -93,8 +101,73 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data_schema=vol.Schema(
                     {
                         vol.Required(
-                            CONFIG_FLOW_IP_ADDRESS
+                            CONFIG_FLOW_IP_ADDRESS, default=VIRTUAL_LED
                         ): str,
                     }
                 ),
             )
+        
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+            config_entry: ConfigEntry,
+    ):
+        """Create the options flow."""
+        return OptionsFlowHandler(config_entry)
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+
+    def __init__(self,config_entry):
+        self._config_entry=config_entry
+        
+    async def async_step_init(
+            self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            _LOGGER.info("YYYYYYESSSS")
+            _LOGGER.info(user_input)
+            _LOGGER.info(self._config_entry.data)
+            data={}
+            leds={}
+            data[CONFIG_FLOW_IP_ADDRESS]=self._config_entry.data[CONFIG_FLOW_IP_ADDRESS]
+            for led in user_input:
+                if user_input[led]:
+                    leds[led]=True
+            data[LINKED_LED]=leds
+            
+            _LOGGER.info(user_input)
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, data=data, options=self.config_entry.options
+            )
+            return self.async_create_entry(data=data)
+        errors = {}
+        devices_list=[]
+        options_schema=None
+
+        if not self._config_entry.title.startswith(VIRTUAL_LED+'-'):
+            errors["base"]="Only virtual"
+            options_schema=vol.Schema(
+                {
+                    vol.Required("not_virtual"): vol.In(devices_list),
+                }
+            )
+
+        else:
+            leds={}
+            for dev in self.hass.data[DOMAIN]:
+                led = self.hass.data[DOMAIN][dev]
+                if type(led).__name__=="ReefLedCoordinator":
+                    leds[vol.Required('LED: '+led.serial+' ('+dev+')')]=bool
+                    #leds[vol.Required("test")]=bool
+
+            options_schema=vol.Schema(leds)
+            
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                options_schema, self._config_entry.options
+            ),
+            errors=errors,
+        )

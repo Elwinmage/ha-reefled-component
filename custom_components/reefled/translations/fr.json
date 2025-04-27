@@ -17,6 +17,18 @@
             "cannot_create": "Impossible de créer une entitié pour une ReefLed avec ces paramètres"
         }
     },
+    "options": {
+	"step":{
+	    "init":{
+		"title": "Détection des LEDs potentielles",
+		"data":{
+		    "slaves": "LED",
+		    "not_virtual": "Pas de configuration disponible"
+		}
+		
+	    }
+	}
+    },
     "entity": {
 	"binary_sensor": {
 	    "status":{
@@ -65,6 +77,12 @@
 	    "moon": {
 		"name": "Lune"
 	    }
+	},
+	"switch": {
+	    "daily_prog": {
+		"name": "Programmation journalière"
+	    }
 	}
+	
     }
 }

@@ -14,6 +14,7 @@ from .const import (
     PLATFORMS,
     CONFIG_FLOW_IP_ADDRESS,
     VIRTUAL_LED,
+    VIRTUAL_LED_INIT_DELAY,
     )
 
 from .coordinator import ReefLedCoordinator, ReefLedVirtualCoordinator
@@ -39,6 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     ip = entry.data[CONFIG_FLOW_IP_ADDRESS]
     if ip.startswith(VIRTUAL_LED):
+        await asyncio.sleep(VIRTUAL_LED_INIT_DELAY)
         coordinator = ReefLedVirtualCoordinator(hass,entry)
     else:
         coordinator = ReefLedCoordinator(hass,entry)

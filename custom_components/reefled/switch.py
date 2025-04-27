@@ -1,147 +1,105 @@
 """ Implements the sensor entity """
 import logging
 
+from dataclasses import dataclass
+from collections.abc import Callable
+
 from homeassistant.core import HomeAssistant
+
 from homeassistant.config_entries import ConfigEntry
+
+from homeassistant.components.switch import (
+    SwitchEntity,
+    SwitchEntityDescription,
+    SwitchDeviceClass,
+ )
+
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.device_registry import  DeviceInfo
 
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-
-from homeassistant.core import callback
-
-_LOGGER = logging.getLogger(__name__)
+from homeassistant.helpers.typing import StateType
 
 from .const import (
     DOMAIN,
     DAILY_PROG_INTERNAL_NAME,
     )
 
-from homeassistant.components.switch import (
-    SwitchEntity,
-    SwitchDeviceClass,
- )
-
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-)
 from .coordinator import ReefLedCoordinator
 
+_LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
-):
-    """Configuration de la plate-forme à partir de la configuration
-    trouvée dans configuration.yaml"""
-    pass
+@dataclass(kw_only=True)
+class ReefLedSwitchEntityDescription(SwitchEntityDescription):
+    """Describes reefled Switch entity."""
+    exists_fn: Callable[[ReefLedCoordinator], bool] = lambda _: True
+    value_fn: Callable[[ReefLedCoordinator], StateType]
+
+    
+SWITCHES: tuple[ReefLedSwitchEntityDescription, ...] = (
+    ReefLedSwitchEntityDescription(
+        key="daily_prog",
+        translation_key="daily_prog",
+        value_fn=lambda device: device.get_data(DAILY_PROG_INTERNAL_NAME),
+        exists_fn=lambda _: True,
+        icon="mdi:calendar-range",
+    ),
+)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
     discovery_info=None,  # pylint: disable=unused-argument
 ):
     """Configuration de la plate-forme tuto_hacs à partir de la configuration graphique"""
-
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-
+    device = hass.data[DOMAIN][config_entry.entry_id]
+    
     entities=[]
-    entities += [DailyProgSwitchEntity(coordinator, entry)]
-
-    if type(coordinator).__name__ == 'ReefLedVirtualCoordinator':
-        for led in coordinator.slaves:
-            entities += [SlaveLedSwitchEntity(coordinator,entry,led)]
+    _LOGGER.debug("SWITCHES")
+    _LOGGER.debug(type(device).__name__)
+    _LOGGER.debug(SWITCHES)
+    entities += [ReefLedSwitchEntity(device, description)
+                 for description in SWITCHES
+                 if description.exists_fn(device)]
 
     async_add_entities(entities, True)
 
 
-class SlaveLedSwitchEntity(CoordinatorEntity,SwitchEntity):
-    """La classe de l'entité Sensor"""
-
-    def __init__(
-        self,
-            coordinator,
-            entry_infos,
-            idx
-    ) -> None:
-        """Initisalisation de notre entité"""
-        super().__init__(coordinator,context=idx.title)
-        self._attr_name = entry_infos.title+" slave "+idx.title
-        self._attr_unique_id = entry_infos.title+"_slave_"+idx.title
-        self.coordinator = coordinator
-        self._attr_device_class=SwitchDeviceClass.SWITCH
-        self._state = False
-        
-    @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:calendar-range"
-
-    #@callback
-    #def _handle_coordinator_update(self) -> None:
-    #    self._state= self.coordinator.daily_prog
-    #    self.async_write_ha_state()
-        
-
-    @property
-    def is_on(self):
-        return self._state
-
-
-    def turn_on(self,**kwargs) -> None:
-        self._state=True
-
-    def turn_off(self,**kwargs) -> None:
-        self._state=False
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return self.coordinator.device_info
-       
+class ReefLedSwitchEntity(SwitchEntity):
+    """Represent an ReefLed switch."""
+    _attr_has_entity_name = True
     
-class DailyProgSwitchEntity(CoordinatorEntity,SwitchEntity):
-    """La classe de l'entité Sensor"""
-
     def __init__(
-        self,
-            coordinator,
-            entry_infos, 
+        self, device: ReefLedCoordinator, entity_description: ReefLedSwitchEntityDescription
     ) -> None:
-        """Initisalisation de notre entité"""
-        super().__init__(coordinator,context=DAILY_PROG_INTERNAL_NAME)
-        self._attr_name = entry_infos.title+"_"+DAILY_PROG_INTERNAL_NAME
-        self._attr_unique_id = entry_infos.title+"_"+DAILY_PROG_INTERNAL_NAME
-        self.coordinator = coordinator
-        self._attr_device_class=SwitchDeviceClass.SWITCH
+        """Set up the instance."""
+        self._device = device
+        self.entity_description = entity_description
+        self._attr_available = False
+        self._attr_unique_id = f"{device.serial}_{entity_description.key}"
         self._state = False
         
-    @property
-    def icon(self):
-        """Return device icon for this entity."""
-        return "mdi:calendar-range"
+    async def async_update(self) -> None:
+        """Update entity state."""
+        self._attr_available = True
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        self._state= self.coordinator.daily_prog
-        self.async_write_ha_state()
-        
-
-    @property
-    def is_on(self):
-        return self._state
-
-
-    def turn_on(self,**kwargs) -> None:
+    async def async_turn_on(self, **kwargs):
+        """Turn the switch on."""
+        _LOGGER.debug("Reefled.switch.async_turn_on %s"%kwargs)
         self._state=True
+        self._device.link_slave(self._name)
 
-    def turn_off(self,**kwargs) -> None:
+    def async_turn_off(self, **kwargs):
         self._state=False
-
+        self._device.unlink_slave(self._name)
+        
+    @property
+    def is_on(self) -> bool:
+        return self._state
+        
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device info."""
-        return self.coordinator.device_info
-        
+        return self._device.device_info
+
+

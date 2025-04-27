@@ -23,6 +23,7 @@ from .const import (
     SW_VERSION,
     DEVICE_MANUFACTURER,
     VIRTUAL_LED,
+    LINKED_LED,
 )
 
 from .reefled import ReefLedAPI
@@ -141,20 +142,16 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
     ) -> None:
         """Initialize coordinator."""
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL))
+        self._hass=hass
         self._title=entry.title
-        # all possible slaves
-        self._slaves = []
+        self._entry=entry
         # only led linked to this virtual device
-        self._linked =[]
-        _LOGGER.debug(hass.data[DOMAIN])
-        for l in  hass.data[DOMAIN]:
-            led = hass.data[DOMAIN][l]
-            if type(led).__name__=='ReefLedVirtualCoordinator':
-                _LOGGER.debug("Virtual LED: %s"%l)
-            else:
-                _LOGGER.debug("LED: %s"%l)
-                self._slaves += [led]
-
+        self._linked = {}
+        for led in entry.data[LINKED_LED]:
+            name=led.split(' ')[1]
+            uuid=led.split('(')[1][:-1]
+            self._linked[uuid]=name
+        _LOGGER.info("Devices linked to %s: %s"%(self._title,self._linked))
 
     async def _async_setup(self) -> None:
         """Do initialization logic."""
@@ -202,7 +199,16 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
     @property
     def title(self):
         return self._title
-    
+
+
+    def link_slave(self,name):
+        _LOGGER.info("Link %s to %s"%(name,self.title))
+        _LOGGER.debug(self.slaves)
+
+    def unlink_slave(self,name):
+        _LOGGER.info("Unlink %s to %s"%(name,self.title))
+        _LOGGER.debug(self.slaves)
+        
     @property
     def slaves(self):
         return self._slaves

@@ -31,6 +31,8 @@ SW_VERSION="version"
 DAILY_PROG_INTERNAL_NAME="daily_prog"
 
 VIRTUAL_LED="virtual"
+VIRTUAL_LED_INIT_DELAY=5 #wait 5s to be sure real LED have been configured
+LINKED_LED="linked"
 
 CONVERSION_COEF=100/255
 

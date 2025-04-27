@@ -17,6 +17,18 @@
             "cannot_create": "Unable to create ReefLed device with specified parameters"
         }
     },
+    "options": {
+	"step":{
+	    "init":{
+		"title": "Detect possible LEDs",
+		"data":{
+		    "slaves": "LED",
+		    "not_virtual": "Not configurable"
+		}
+		
+	    }
+	}
+    },
     "entity": {
 	"binary_sensor": {
 	    "status":{
@@ -64,6 +76,11 @@
 	    },
 	    "moon": {
 		"name": "Moon"
+	    }
+	},
+	"switch": {
+	    "daily_prog": {
+		"name": "Daily Programmation"
 	    }
 	}
     }
