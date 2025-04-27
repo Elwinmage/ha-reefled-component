@@ -57,9 +57,8 @@ def get_unique_id(ip):
             udn=str(tree.device.UDN)
             uuid=udn.replace("uuid:","")
             return uuid
-    except:
-        pass
-    return None
+    except Exception as e :
+        return str(e)
      
 def get_friendly_name(ip):
     try:

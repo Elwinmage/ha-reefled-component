@@ -94,11 +94,6 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         
     def get_data(self,name):
         _LOGGER.debug("get_data for %s: %s"%(name,self.my_api.data[name]))
-
-        #await self.my_api.fetch_data()
-        #asyncio.run_coroutine_threadsafe(
-        #    self.my_api.fetch_data() , self._hass.loop
-        #).result()
         return self.my_api.data[name]
     
 
@@ -147,8 +142,10 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         """Initialize coordinator."""
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL))
         self._title=entry.title
+        # all possible slaves
         self._slaves = []
-        self.data = {}
+        # only led linked to this virtual device
+        self._linked =[]
         _LOGGER.debug(hass.data[DOMAIN])
         for l in  hass.data[DOMAIN]:
             led = hass.data[DOMAIN][l]
@@ -157,7 +154,8 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
             else:
                 _LOGGER.debug("LED: %s"%l)
                 self._slaves += [led]
-        
+
+
     async def _async_setup(self) -> None:
         """Do initialization logic."""
         pass
@@ -167,14 +165,29 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         pass
     
     async def async_send_new_values(self):
+        _LOGGER.error("Not implemented: async_send_new_values")
         pass
 
     async def async_config_entry_first_refresh(self):
         pass
 
     def daily_prog(self):
+        _LOGGER.error("Not implemented: daily_prog")
         pass
 
+
+    def data_exist(self,name):
+        _LOGGER.error("Not implemented: data_exists")
+        pass
+
+    @property
+    def title(self):
+        return self._title
+
+    @property
+    def serial(self):
+        return self._title
+    
     @property
     def device_info(self):
         return DeviceInfo(

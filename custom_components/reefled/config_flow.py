@@ -37,7 +37,7 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _unique_id(self, user_input):
         f_kwargs = {}
-        f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS]
+        f_kwargs["ip"] = user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[0]
         uuid=await self.hass.async_add_executor_job(partial(get_unique_id,**f_kwargs))
         return uuid
 
@@ -52,12 +52,12 @@ class ReefLedConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 #Identify device with unique ID
                 uuid = await self._unique_id(user_input)
-                _LOGGER.debug("-- ** UUID ** -- %s"%uuid)
+                _LOGGER.info("-- ** UUID ** -- %s"%uuid)
                 #await self.async_set_unique_id(uuid)
                 await self.async_set_unique_id(str(uuid))
                 self._abort_if_unique_id_configured()
                 title=await self._title(user_input)
-                _LOGGER.debug("-- ** TITLE ** -- %s"%title)
+                _LOGGER.info("-- ** TITLE ** -- %s"%title)
                 user_input[CONFIG_FLOW_IP_ADDRESS]=user_input[CONFIG_FLOW_IP_ADDRESS].split(' ')[0]
     
             return self.async_create_entry(
