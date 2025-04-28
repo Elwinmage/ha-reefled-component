@@ -29,7 +29,7 @@ If you have the RESLED Gen2 you can contact me to add the support
 - Daily program generation according to meteo of a specific place according to geographic coordinates
 
 # Home Assitant Card
-Here is an example to display your led program.
+An example to display your led program.
 
 <p align="center">                                                                                                                                                                              
   <img src="https://github.com/Elwinmage/ha-reefled-component/blob/main/doc/img/program.png" alt="Image">                                                                                       
