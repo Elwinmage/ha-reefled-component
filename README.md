@@ -1,5 +1,8 @@
+# Overview
 RedSea Reefled Local Management (no cloud)
+
 This is not an official repo of RedSea
+
 Use at your own risk
 
 # Installation via hacs 
@@ -9,6 +12,7 @@ Use at your own risk
 
 # Hardware
 Test with the RESLED 160 but may work with 90 and 50 versions let me know.
+
 If you have the RESLED Gen2 you can contact me to add the support
 
 # What works
@@ -16,18 +20,25 @@ If you have the RESLED Gen2 you can contact me to add the support
 - Get and Set White, Blue and Moon values
 - Get Fan and Temperature
 - Get name and value for progams (with clouds support)
-- Group and manage LED above a virtual device (Create de vitual device from the integration panel, then use the configure button to link already declared leds)
+- Group and manage LED with a virtual device (Create a vitual device from the integration panel, then use the configure button to link the leds)
 
-#Futur implementation
+# Futur implementation
 - Set programs (and implement the daily prog button that do nothing yet)
 - Manage manual mode timing
 - Random  program creation
 - Daily program generation according to meteo of a specific place according to geographic coordinates
 
 # Home Assitant Card
-Here is an example to display your led programation
-You need to install decluttering, config-template-card and apexcharts-card from HACS
+Here is an example to display your led programation.
 
+<p align="center">                                                                                                                                                                              
+  <img src="https://github.com/Elwinmage/ha-reefled-component/doc/img/program.png" alt="Image">                                                                                       
+</p> 
+
+
+You need to install decluttering, config-template-card and apexcharts-card from HACS.
+
+Don't forget to edit the entity name to set your own.
 
 <code>
 decluttering_templates:
@@ -142,23 +153,23 @@ views:
             heading: Nouvelle section
           - type: entities
             entities:
-              - entity: switch.rsled160_2081858396_daily_prog
+              - entity: switch.rsledXXXXXXXX_daily_prog
                 name: Programmation journalière
           - type: conditional
             conditions:
               - condition: state
-                entity: switch.rsled160_2081858396_daily_prog
+                entity: switch.rsledXXXXXXXX_daily_prog
                 state: 'on'
             card:
               type: custom:decluttering-card
               template: reefled-auto
               variables:
-                - sensor: sensor.rsled160_2081858396_lundi
+                - sensor: sensor.rsledXXXXXXXX_lundi
                 - day_name: Tous les jours
           - type: conditional
             conditions:
               - condition: state
-                entity: switch.rsled160_2081858396_daily_prog
+                entity: switch.rsledXXXXXXXX_daily_prog
                 state_not: 'on'
             card:
               type: custom:layout-card
