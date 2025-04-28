@@ -49,7 +49,7 @@ async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info=None,  # pylint: disable=unused-argument
+    discovery_info=None,  
 ):
     """Configuration de la plate-forme tuto_hacs à partir de la configuration graphique"""
     device = hass.data[DOMAIN][config_entry.entry_id]
@@ -82,16 +82,19 @@ class ReefLedSwitchEntity(SwitchEntity):
     async def async_update(self) -> None:
         """Update entity state."""
         self._attr_available = True
+        self._state = self.entity_description.value_fn(
+            self._device
+        )
 
     async def async_turn_on(self, **kwargs):
         """Turn the switch on."""
         _LOGGER.debug("Reefled.switch.async_turn_on %s"%kwargs)
         self._state=True
-        self._device.link_slave(self._name)
+        self._device.data[self.entity_description.key]=True
 
     def async_turn_off(self, **kwargs):
         self._state=False
-        self._device.unlink_slave(self._name)
+        self._device.data[self.entity_description.key]=False
         
     @property
     def is_on(self) -> bool:

@@ -98,6 +98,9 @@ class ReefLedCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         return self.my_api.data[name]
     
 
+    def set_data(self,name,value):
+        self.my_api.data[name]=value
+    
     def data_exist(self,name):
         if name in self.my_api.data:
             return True
@@ -146,12 +149,13 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         self._title=entry.title
         self._entry=entry
         # only led linked to this virtual device
-        self._linked = {}
+        self._linked = []
+        _LOGGER.info("Devices linked to %s: "%(self._title))
         for led in entry.data[LINKED_LED]:
             name=led.split(' ')[1]
             uuid=led.split('(')[1][:-1]
-            self._linked[uuid]=name
-        _LOGGER.info("Devices linked to %s: %s"%(self._title,self._linked))
+            self._linked+=[self._hass.data[DOMAIN][uuid]]
+            _LOGGER.info(" - %s"%(name))
 
     async def _async_setup(self) -> None:
         """Do initialization logic."""
@@ -172,11 +176,65 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         _LOGGER.error("Not implemented: daily_prog")
         pass
 
+    def get_data(self,name):
+        data=self._linked[0].get_data(name)
+        match type(data).__name__:
+            case 'bool':
+                return self.get_data_bool(name)
+            case "int":
+                return self.get_data_int(name)
+            case "float":
+                return self.get_data_float(name)
+            case _:
+                _LOGGER.warning("Not implemented")
 
+    def get_data_bool(self,name):
+        for led in self._linked:
+            if led.get_data(name):
+                return True
+        return False
+
+
+    def get_data_int(self,name):
+        res=0
+        count=0
+        for led in self._linked:
+            res+=led.get_data(name)
+            count +=1
+        return int(res/count)
+
+
+    def get_data_float(self,name):
+        res=0
+        count=0
+        for led in self._linked:
+            res+=led.get_data(name)
+            count +=1
+        return res/count
+
+    def set_data(self,name,value):
+        for led in self._linked:
+            led.set_data(name,value)
+
+    def push_values(self):
+        for led in self._linked:
+            led.push_values()
+        
+        
     def data_exist(self,name):
-        _LOGGER.error("Not implemented: data_exists")
-        pass
+        for led in self._linked:
+            if led.data_exist(name):
+                _LOGGER.debug("data_exists: %s"%name)
+                return True
+        _LOGGER.debug("not data_exists: %s"%name)            
+        return False
 
+    def get_prog_name(self,name):
+        return self._linked[0].get_prog_name(name)
+
+    def get_prog_data(self,name):
+        return self._linked[0].get_prog_data(name)
+        
     @property
     def title(self):
         return self._title
@@ -201,14 +259,4 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         return self._title
 
 
-    def link_slave(self,name):
-        _LOGGER.info("Link %s to %s"%(name,self.title))
-        _LOGGER.debug(self.slaves)
 
-    def unlink_slave(self,name):
-        _LOGGER.info("Unlink %s to %s"%(name,self.title))
-        _LOGGER.debug(self.slaves)
-        
-    @property
-    def slaves(self):
-        return self._slaves

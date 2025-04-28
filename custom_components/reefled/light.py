@@ -120,16 +120,13 @@ class ReefLedLightEntity(LightEntity):
         _LOGGER.debug("Reefled.light.async_turn_on %s"%kwargs)
         if ATTR_BRIGHTNESS in kwargs:
             ha_value = int(kwargs[ATTR_BRIGHTNESS])
-            self._device.data[self.entity_description.key]=ha_value
-            #await self.device.async_send_new_values()
+            self._device.set_data(self.entity_description.key,ha_value)
             self._device.push_values()
 
-
-    def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs):
         self._brightness=0
         self._state="off"
-        self._device.data[self.entity_description.key]=0
-        #await self._device.async_send_new_values()
+        self._device.set_data(self.entity_description.key,0)
         self._device.push_values()
 
     @property

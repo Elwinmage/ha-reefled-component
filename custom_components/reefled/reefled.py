@@ -16,6 +16,7 @@ from .const import (
     MOON_INTERNAL_NAME,
     STATUS_INTERNAL_NAME,
     IP_INTERNAL_NAME,
+    DAILY_PROG_INTERNAL_NAME,
     CONVERSION_COEF,
     MODEL_NAME,
     MODEL_ID,
@@ -50,9 +51,9 @@ class ReefLedAPI():
         self.data={}
         self.data[STATUS_INTERNAL_NAME]=False
         self.data[FAN_INTERNAL_NAME]=0
+        self.data[DAILY_PROG_INTERNAL_NAME]=True
         self.programs={}
         self.last_update_success=None
-        self._daily_prog = True
 
       
     async def get_initial_data(self):
@@ -113,13 +114,13 @@ class ReefLedAPI():
                 response=r.json()
                 _LOGGER.debug("Get program data:%s"%response)
  #               try:
-                self._daily_prog =  True
+                self.data[DAILY_PROG_INTERNAL_NAME] =  True
                 old_prog_name=None
                 for i in range(1,8):
                     prog_id=response[i-1]['day']
                     prog_name=response[i-1]['name']
                     if i > 1 and prog_name != old_prog_name:
-                            self._daily_prog = False
+                            self.data[DAILY_PROG_INTERNAL_NAME] = False
                     old_prog_name=prog_name        
                     clouds_data={}
                     if prog_name not in self.programs:
@@ -181,12 +182,9 @@ class ReefLedAPI():
 
     def push_values(self):
         payload={"white": self.data[WHITE_INTERNAL_NAME]*CONVERSION_COEF, "blue":self.data[BLUE_INTERNAL_NAME]*CONVERSION_COEF,"moon": self.data[MOON_INTERNAL_NAME]*CONVERSION_COEF}
-        r = requests.post(self._base_url+'/manual', json = payload)
+        r = httpx.post(self._base_url+'/manual', json = payload,verify=False)
 
     async def async_send_new_values(self):
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None,self.push_values)
         
-    @property
-    def daily_prog(self):
-        return self._daily_prog

@@ -74,9 +74,10 @@ SENSORS: tuple[ReefLedSensorEntityDescription, ...] = (
     ),
 )
 
+SCHEDULES = ()
 """ Lights and cloud schedule as sensors """
 for auto_id in range(1,8):
-    SENSORS += (ReefLedSensorEntityDescription(
+    SCHEDULES += (ReefLedSensorEntityDescription(
         key="auto_"+str(auto_id),
         translation_key="auto_"+str(auto_id),
         value_fn=lambda device: device.get_prog_name("auto_"+str(auto_id)),
@@ -93,8 +94,12 @@ async def async_setup_entry(
     """Configure reefled sensors from graphic user interface data"""
     device = hass.data[DOMAIN][entry.entry_id]
     entities=[]
+    if type(device).__name__=='ReefLedCoordinator':
+        entities += [ReefLedSensorEntity(device, description)
+                     for description in SENSORS
+                     if description.exists_fn(device)]
     entities += [ReefLedSensorEntity(device, description)
-                 for description in SENSORS
+                 for description in SCHEDULES
                  if description.exists_fn(device)]
     async_add_entities(entities, True)
 
