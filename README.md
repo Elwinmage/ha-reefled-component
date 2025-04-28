@@ -32,7 +32,7 @@ If you have the RESLED Gen2 you can contact me to add the support
 Here is an example to display your led programation.
 
 <p align="center">                                                                                                                                                                              
-  <img src="https://github.com/Elwinmage/ha-reefled-component/doc/img/program.png" alt="Image">                                                                                       
+  <img src="https://github.com/Elwinmage/ha-reefled-component/blob/main/doc/img/program.png" alt="Image">                                                                                       
 </p> 
 
 
