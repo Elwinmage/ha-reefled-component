@@ -151,11 +151,12 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         # only led linked to this virtual device
         self._linked = []
         _LOGGER.info("Devices linked to %s: "%(self._title))
-        for led in entry.data[LINKED_LED]:
-            name=led.split(' ')[1]
-            uuid=led.split('(')[1][:-1]
-            self._linked+=[self._hass.data[DOMAIN][uuid]]
-            _LOGGER.info(" - %s"%(name))
+        if LINKED_LED in entry.data:
+            for led in entry.data[LINKED_LED]:
+                name=led.split(' ')[1]
+                uuid=led.split('(')[1][:-1]
+                self._linked+=[self._hass.data[DOMAIN][uuid]]
+                _LOGGER.info(" - %s"%(name))
 
     async def _async_setup(self) -> None:
         """Do initialization logic."""
@@ -177,16 +178,17 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         pass
 
     def get_data(self,name):
-        data=self._linked[0].get_data(name)
-        match type(data).__name__:
-            case 'bool':
-                return self.get_data_bool(name)
-            case "int":
-                return self.get_data_int(name)
-            case "float":
-                return self.get_data_float(name)
-            case _:
-                _LOGGER.warning("Not implemented")
+        if len(self._linked)>0:
+            data=self._linked[0].get_data(name)
+            match type(data).__name__:
+                case 'bool':
+                    return self.get_data_bool(name)
+                case "int":
+                    return self.get_data_int(name)
+                case "float":
+                    return self.get_data_float(name)
+                case _:
+                    _LOGGER.warning("Not implemented")
 
     def get_data_bool(self,name):
         for led in self._linked:
@@ -230,11 +232,14 @@ class ReefLedVirtualCoordinator(DataUpdateCoordinator[dict[str,Any]]):
         return False
 
     def get_prog_name(self,name):
-        return self._linked[0].get_prog_name(name)
-
+        if len(self._linked)>0:
+            return self._linked[0].get_prog_name(name)
+        return None
+    
     def get_prog_data(self,name):
-        return self._linked[0].get_prog_data(name)
-        
+        if len(self._linked)>0:
+            return self._linked[0].get_prog_data(name)
+        return None
     @property
     def title(self):
         return self._title
