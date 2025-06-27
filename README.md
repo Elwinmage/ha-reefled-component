@@ -1,3 +1,8 @@
+# WARNING
+## This component is replaced with https://github.com/Elwinmage/ha-reefbeat-component wich support reefled, reefmat and reefdose.
+
+## ####################################
+# DEPRECATED
 # Overview
 RedSea Reefled Local Management (no cloud)
 
